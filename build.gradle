@@ -1,0 +1,46 @@
+plugins {
+    id 'fabric-loom' version '1.5-SNAPSHOT'
+    id 'maven-publish'
+}
+
+version = "fabric-1.21.10"
+group = "com.example.autoclicker"
+
+base {
+    archivesName = "[自动攻击]autoclicker"
+}
+
+repositories {
+    maven {
+        name = "Fabric"
+        url = "https://maven.fabricmc.net/"
+    }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:1.21.10"
+    mappings loom.layered() {
+        officialMojangMappings()
+    }
+    modImplementation "net.fabricmc:fabric-loader:0.16.9"
+
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.138.3+1.21.10"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}

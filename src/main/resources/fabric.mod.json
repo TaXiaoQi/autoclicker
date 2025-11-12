@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "autoclicker",
+  "version": "1.0.0",
+  "name": "Auto Clicker",
+  "description": "自动点击",
+  "authors": [
+    "YourName"
+  ],
+  "contact": {
+    "homepage": "https://example.com/",
+    "sources": "https://github.com/example/autoclicker",
+    "repo": "https://github.com/dyzxs/AutoClicker"
+  },
+  "license": "MIT",
+  "icon": "assets/autoclicker/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.example.autoclicker.AutoClicker"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.9",
+    "fabric-api": "*",
+    "minecraft": "1.21.10",
+    "java": ">=21"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
