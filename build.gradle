@@ -23,7 +23,7 @@ dependencies {
     mappings loom.layered() {
         officialMojangMappings()
     }
-    modImplementation "net.fabricmc:fabric-loader:0.16.9"
+    modImplementation "net.fabricmc:fabric-loader:0.17.0"
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:0.138.3+1.21.10"
 }

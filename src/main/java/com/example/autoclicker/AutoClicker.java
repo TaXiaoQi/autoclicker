@@ -62,11 +62,16 @@ public class AutoClicker implements ClientModInitializer {
             if (hitResult instanceof net.minecraft.world.phys.EntityHitResult entityHit) {
                 var entity = entityHit.getEntity();
 
-                if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand ||
-                        entity instanceof net.minecraft.world.entity.Mob) {
-
+                // 攻击盔甲架和敌对生物
+                if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand) {
                     client.gameMode.attack(client.player, entity);
                     client.player.swing(InteractionHand.MAIN_HAND);
+                } else if (entity instanceof net.minecraft.world.entity.Mob mob) {
+                    // 只攻击敌对生物，排除友好生物
+                    if (mob.getType().getCategory() == net.minecraft.world.entity.MobCategory.MONSTER) {
+                        client.gameMode.attack(client.player, entity);
+                        client.player.swing(InteractionHand.MAIN_HAND);
+                    }
                 }
             }
         } catch (Exception e) {
