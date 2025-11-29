@@ -19,12 +19,18 @@ public class ConfigScreen extends Screen {
     private final Screen parent;
     private final Config config;
     private EditBox attackIntervalField;
+    private EditBox attackRandomnessField;
+    private Checkbox attackRandomnessCheckbox;
     private Checkbox attackArmorStandCheckbox;
     private Checkbox attackHostileMobsCheckbox;
     private Checkbox attackNeutralMobsCheckbox;
     private Checkbox attackPassiveMobsCheckbox;
     private EditBox placeIntervalField;
+    private EditBox placeRandomnessField;
+    private Checkbox placeRandomnessCheckbox;
     private Checkbox placeUseBoneMealCheckbox;
+    private Checkbox avoidInteractableBlocksCheckbox;
+    private Checkbox humanizeClicksCheckbox;
 
     protected ConfigScreen(Screen parent) {
         super(Component.literal("自动点击器配置"));
@@ -66,6 +72,33 @@ public class ConfigScreen extends Screen {
         });
         attackIntervalLayout.addChild(attackIntervalField);
         layout.addChild(attackIntervalLayout);
+
+        // 攻击随机性设置
+        LinearLayout attackRandomnessLayout = LinearLayout.horizontal().spacing(5);
+        attackRandomnessLayout.addChild(new StringWidget(
+                Component.literal("攻击随机性:"),
+                this.font
+        ));
+
+        attackRandomnessField = new EditBox(this.font, 100, 20, Component.literal("攻击随机性"));
+        attackRandomnessField.setValue(String.valueOf(config.attackRandomness));
+        attackRandomnessField.setFilter(s -> {
+            if (s.isEmpty()) return true;
+            try {
+                int value = Integer.parseInt(s);
+                return value >= 0;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        });
+        attackRandomnessLayout.addChild(attackRandomnessField);
+        layout.addChild(attackRandomnessLayout);
+
+        attackRandomnessCheckbox = Checkbox.builder(
+                Component.literal("启用攻击随机性"),
+                this.font
+        ).selected(config.attackRandomnessEnabled).build();
+        layout.addChild(attackRandomnessCheckbox);
 
         // 攻击目标类型
         attackArmorStandCheckbox = Checkbox.builder(
@@ -120,12 +153,59 @@ public class ConfigScreen extends Screen {
         placeIntervalLayout.addChild(placeIntervalField);
         layout.addChild(placeIntervalLayout);
 
+        // 放置随机性设置
+        LinearLayout placeRandomnessLayout = LinearLayout.horizontal().spacing(5);
+        placeRandomnessLayout.addChild(new StringWidget(
+                Component.literal("放置随机性:"),
+                this.font
+        ));
+
+        placeRandomnessField = new EditBox(this.font, 100, 20, Component.literal("放置随机性"));
+        placeRandomnessField.setValue(String.valueOf(config.placeRandomness));
+        placeRandomnessField.setFilter(s -> {
+            if (s.isEmpty()) return true;
+            try {
+                int value = Integer.parseInt(s);
+                return value >= 0;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        });
+        placeRandomnessLayout.addChild(placeRandomnessField);
+        layout.addChild(placeRandomnessLayout);
+
+        placeRandomnessCheckbox = Checkbox.builder(
+                Component.literal("启用放置随机性"),
+                this.font
+        ).selected(config.placeRandomnessEnabled).build();
+        layout.addChild(placeRandomnessCheckbox);
+
         // 骨粉开关
         placeUseBoneMealCheckbox = Checkbox.builder(
                 Component.literal("自动使用骨粉"),
                 this.font
         ).selected(config.useBoneMeal).build();
         layout.addChild(placeUseBoneMealCheckbox);
+
+        // 避开可交互方块
+        avoidInteractableBlocksCheckbox = Checkbox.builder(
+                Component.literal("避开工作台等交互方块"),
+                this.font
+        ).selected(config.avoidInteractableBlocks).build();
+        layout.addChild(avoidInteractableBlocksCheckbox);
+
+        // === 反检测设置 ===
+        StringWidget antiDetectionTitle = new StringWidget(
+                Component.literal("反检测设置"),
+                this.font
+        );
+        layout.addChild(antiDetectionTitle);
+
+        humanizeClicksCheckbox = Checkbox.builder(
+                Component.literal("人性化点击 (随机跳过)"),
+                this.font
+        ).selected(config.humanizeClicks).build();
+        layout.addChild(humanizeClicksCheckbox);
 
         // === 按钮行 ===
         LinearLayout buttonLayout = LinearLayout.horizontal().spacing(10);
@@ -197,6 +277,29 @@ public class ConfigScreen extends Screen {
                 return;
             }
 
+            // 验证攻击随机性
+            int attackRandomness;
+            try {
+                attackRandomness = Integer.parseInt(attackRandomnessField.getValue());
+                if (attackRandomness < 0) {
+                    if (minecraft != null && minecraft.player != null) {
+                        minecraft.player.displayClientMessage(
+                                Component.literal("§c攻击随机性不能为负数"),
+                                true
+                        );
+                    }
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                if (minecraft != null && minecraft.player != null) {
+                    minecraft.player.displayClientMessage(
+                            Component.literal("§c攻击随机性必须是有效数字"),
+                            true
+                    );
+                }
+                return;
+            }
+
             // 验证放置间隔
             int placeInterval;
             try {
@@ -220,14 +323,43 @@ public class ConfigScreen extends Screen {
                 return;
             }
 
+            // 验证放置随机性
+            int placeRandomness;
+            try {
+                placeRandomness = Integer.parseInt(placeRandomnessField.getValue());
+                if (placeRandomness < 0) {
+                    if (minecraft != null && minecraft.player != null) {
+                        minecraft.player.displayClientMessage(
+                                Component.literal("§c放置随机性不能为负数"),
+                                true
+                        );
+                    }
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                if (minecraft != null && minecraft.player != null) {
+                    minecraft.player.displayClientMessage(
+                            Component.literal("§c放置随机性必须是有效数字"),
+                            true
+                    );
+                }
+                return;
+            }
+
             // 更新配置
             config.attackInterval = attackInterval;
+            config.attackRandomness = attackRandomness;
+            config.attackRandomnessEnabled = attackRandomnessCheckbox.selected();
             config.attackArmorStands = attackArmorStandCheckbox.selected();
             config.attackHostileMobs = attackHostileMobsCheckbox.selected();
             config.attackNeutralMobs = attackNeutralMobsCheckbox.selected();
             config.attackPassiveMobs = attackPassiveMobsCheckbox.selected();
             config.placeInterval = placeInterval;
+            config.placeRandomness = placeRandomness;
+            config.placeRandomnessEnabled = placeRandomnessCheckbox.selected();
             config.useBoneMeal = placeUseBoneMealCheckbox.selected();
+            config.avoidInteractableBlocks = avoidInteractableBlocksCheckbox.selected();
+            config.humanizeClicks = humanizeClicksCheckbox.selected();
 
             // 保存到文件
             Files.createDirectories(CONFIG_PATH.getParent());
