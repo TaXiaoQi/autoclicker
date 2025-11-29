@@ -23,11 +23,10 @@ public class Config {
 
     // === 自动放置配置 ===
     public boolean autoPlaceEnabled = false;
-    public int placeInterval = 10;                 // 基础间隔（ticks）
+    public int placeInterval = 5;                 // 基础间隔（ticks）
     public int placeRandomness = 3;                // 随机性范围
     public boolean placeRandomnessEnabled = true;  // 是否启用随机性
     public boolean useBoneMeal = true;             // 是否自动使用骨粉
-    public boolean avoidInteractableBlocks = true; // 是否避开可交互方块（预留）
 
     // === 反检测设置 ===
     public boolean humanizeClicks = true;          // 人性化点击（随机跳过）

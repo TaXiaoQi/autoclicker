@@ -6,11 +6,5 @@
 
   "text.autoclicker.auto_attack": "自动攻击",
   "text.autoclicker.auto_place": "自动放置",
-  "text.autoclicker.config_screen": "自动点击器配置",
-
-  "text.autoclicker.attack_randomness": "攻击随机性",
-  "text.autoclicker.place_randomness": "放置随机性",
-  "text.autoclicker.enable_randomness": "启用随机性",
-  "text.autoclicker.avoid_interactable": "避开交互方块",
-  "text.autoclicker.humanize_clicks": "人性化点击"
+  "text.autoclicker.config_screen": "自动点击器配置"
 }

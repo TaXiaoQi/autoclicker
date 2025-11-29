@@ -32,10 +32,10 @@ public class AutoClicker implements ClientModInitializer {
     private KeyMapping placeToggleKey;
     private KeyMapping configScreenKey;
 
-    // ✅ 自动关闭计时器（使用 gameTime）
+    // 自动关闭计时器
     private long lastAttackGameTime = 0;
     private long lastPlaceGameTime = 0;
-    private static final long AUTO_DISABLE_DELAY_TICKS = 600L; // 30秒 = 600 tick
+    private static final long AUTO_DISABLE_DELAY_TICKS = 1200L; // ticks
 
     // 人性化点击变量
     private int currentAttackInterval;

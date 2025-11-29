@@ -3,7 +3,7 @@
   "id": "autoclicker",
   "version": "1.2.0",
   "name": "Auto Clicker",
-  "description": "自动点击",
+  "description": "实现 自动攻击|自动放置 的模组",
   "authors": [
     "小奇"
   ],

@@ -29,7 +29,6 @@ public class ConfigScreen extends Screen {
     private EditBox placeRandomnessField;
     private Checkbox placeRandomnessCheckbox;
     private Checkbox placeUseBoneMealCheckbox;
-    private Checkbox avoidInteractableBlocksCheckbox; // ✅ 新增
     private Checkbox humanizeClicksCheckbox;
 
     protected ConfigScreen(Screen parent) {
@@ -43,7 +42,7 @@ public class ConfigScreen extends Screen {
         super.init();
 
         // 使用 LinearLayout
-        LinearLayout layout = LinearLayout.vertical().spacing(8); // 减小间距以容纳更多选项
+        LinearLayout layout = LinearLayout.vertical().spacing(10);
 
         // === 自动攻击配置 ===
         StringWidget attackTitle = new StringWidget(
@@ -156,7 +155,7 @@ public class ConfigScreen extends Screen {
         // 放置随机性设置
         LinearLayout placeRandomnessLayout = LinearLayout.horizontal().spacing(5);
         placeRandomnessLayout.addChild(new StringWidget(
-                Component.literal("放置随机性 (±):"),
+                Component.literal("放置随机性 (±ticks):"),
                 this.font
         ));
 
@@ -186,13 +185,6 @@ public class ConfigScreen extends Screen {
                 this.font
         ).selected(config.useBoneMeal).build();
         layout.addChild(placeUseBoneMealCheckbox);
-
-        // 避开可交互方块
-        avoidInteractableBlocksCheckbox = Checkbox.builder(
-                Component.literal("避开可交互方块"),
-                this.font
-        ).selected(config.avoidInteractableBlocks).build();
-        layout.addChild(avoidInteractableBlocksCheckbox);
 
         // === 反检测设置 ===
         StringWidget antiDetectionTitle = new StringWidget(
@@ -358,7 +350,6 @@ public class ConfigScreen extends Screen {
             config.placeRandomness = placeRandomness;
             config.placeRandomnessEnabled = placeRandomnessCheckbox.selected();
             config.useBoneMeal = placeUseBoneMealCheckbox.selected();
-            config.avoidInteractableBlocks = avoidInteractableBlocksCheckbox.selected(); // ✅ 新增
             config.humanizeClicks = humanizeClicksCheckbox.selected();
 
             // 保存到文件
