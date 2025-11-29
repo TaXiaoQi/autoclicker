@@ -27,7 +27,7 @@ public class AutoClicker implements ClientModInitializer {
     private final Random random = new Random();
     private int attackTickCounter = 0;
     private int placeTickCounter = 0;
-    private Config config;
+    Config config;
     private KeyMapping attackToggleKey;
     private KeyMapping placeToggleKey;
     private KeyMapping configScreenKey;

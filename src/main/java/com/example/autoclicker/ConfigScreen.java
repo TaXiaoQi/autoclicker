@@ -24,12 +24,12 @@ public class ConfigScreen extends Screen {
     private Checkbox attackArmorStandCheckbox;
     private Checkbox attackHostileMobsCheckbox;
     private Checkbox attackNeutralMobsCheckbox;
-    private Checkbox attackPassiveMobsCheckbox;
+    private Checkbox attackPassiveMobsCheckbox; // ✅ 新增
     private EditBox placeIntervalField;
     private EditBox placeRandomnessField;
     private Checkbox placeRandomnessCheckbox;
     private Checkbox placeUseBoneMealCheckbox;
-    private Checkbox avoidInteractableBlocksCheckbox;
+    private Checkbox avoidInteractableBlocksCheckbox; // ✅ 新增
     private Checkbox humanizeClicksCheckbox;
 
     protected ConfigScreen(Screen parent) {
@@ -43,11 +43,11 @@ public class ConfigScreen extends Screen {
         super.init();
 
         // 使用 LinearLayout
-        LinearLayout layout = LinearLayout.vertical().spacing(10);
+        LinearLayout layout = LinearLayout.vertical().spacing(8); // 减小间距以容纳更多选项
 
         // === 自动攻击配置 ===
         StringWidget attackTitle = new StringWidget(
-                Component.literal("自动攻击配置"),
+                Component.literal("=== 自动攻击配置 ==="),
                 this.font
         );
         layout.addChild(attackTitle);
@@ -59,7 +59,7 @@ public class ConfigScreen extends Screen {
                 this.font
         ));
 
-        attackIntervalField = new EditBox(this.font, 100, 20, Component.literal("攻击间隔"));
+        attackIntervalField = new EditBox(this.font, 80, 20, Component.literal("攻击间隔"));
         attackIntervalField.setValue(String.valueOf(config.attackInterval));
         attackIntervalField.setFilter(s -> {
             if (s.isEmpty()) return true;
@@ -76,11 +76,11 @@ public class ConfigScreen extends Screen {
         // 攻击随机性设置
         LinearLayout attackRandomnessLayout = LinearLayout.horizontal().spacing(5);
         attackRandomnessLayout.addChild(new StringWidget(
-                Component.literal("攻击随机性:"),
+                Component.literal("攻击随机性 (±):"),
                 this.font
         ));
 
-        attackRandomnessField = new EditBox(this.font, 100, 20, Component.literal("攻击随机性"));
+        attackRandomnessField = new EditBox(this.font, 80, 20, Component.literal("攻击随机性"));
         attackRandomnessField.setValue(String.valueOf(config.attackRandomness));
         attackRandomnessField.setFilter(s -> {
             if (s.isEmpty()) return true;
@@ -127,7 +127,7 @@ public class ConfigScreen extends Screen {
 
         // === 自动放置配置 ===
         StringWidget placeTitle = new StringWidget(
-                Component.literal("自动放置配置"),
+                Component.literal("=== 自动放置配置 ==="),
                 this.font
         );
         layout.addChild(placeTitle);
@@ -139,7 +139,7 @@ public class ConfigScreen extends Screen {
                 this.font
         ));
 
-        placeIntervalField = new EditBox(this.font, 100, 20, Component.literal("放置间隔"));
+        placeIntervalField = new EditBox(this.font, 80, 20, Component.literal("放置间隔"));
         placeIntervalField.setValue(String.valueOf(config.placeInterval));
         placeIntervalField.setFilter(s -> {
             if (s.isEmpty()) return true;
@@ -156,11 +156,11 @@ public class ConfigScreen extends Screen {
         // 放置随机性设置
         LinearLayout placeRandomnessLayout = LinearLayout.horizontal().spacing(5);
         placeRandomnessLayout.addChild(new StringWidget(
-                Component.literal("放置随机性:"),
+                Component.literal("放置随机性 (±):"),
                 this.font
         ));
 
-        placeRandomnessField = new EditBox(this.font, 100, 20, Component.literal("放置随机性"));
+        placeRandomnessField = new EditBox(this.font, 80, 20, Component.literal("放置随机性"));
         placeRandomnessField.setValue(String.valueOf(config.placeRandomness));
         placeRandomnessField.setFilter(s -> {
             if (s.isEmpty()) return true;
@@ -189,14 +189,14 @@ public class ConfigScreen extends Screen {
 
         // 避开可交互方块
         avoidInteractableBlocksCheckbox = Checkbox.builder(
-                Component.literal("避开工作台等交互方块"),
+                Component.literal("避开可交互方块"),
                 this.font
         ).selected(config.avoidInteractableBlocks).build();
         layout.addChild(avoidInteractableBlocksCheckbox);
 
         // === 反检测设置 ===
         StringWidget antiDetectionTitle = new StringWidget(
-                Component.literal("反检测设置"),
+                Component.literal("=== 反检测设置 ==="),
                 this.font
         );
         layout.addChild(antiDetectionTitle);
@@ -233,7 +233,7 @@ public class ConfigScreen extends Screen {
         layout.arrangeElements();
         layout.setPosition(
                 this.width / 2 - layout.getWidth() / 2,
-                this.height / 2 - layout.getHeight() / 2
+                Math.max(20, this.height / 2 - layout.getHeight() / 2) // 确保不会太靠下
         );
 
         // 添加所有组件到屏幕
@@ -353,12 +353,12 @@ public class ConfigScreen extends Screen {
             config.attackArmorStands = attackArmorStandCheckbox.selected();
             config.attackHostileMobs = attackHostileMobsCheckbox.selected();
             config.attackNeutralMobs = attackNeutralMobsCheckbox.selected();
-            config.attackPassiveMobs = attackPassiveMobsCheckbox.selected();
+            config.attackPassiveMobs = attackPassiveMobsCheckbox.selected(); // ✅ 新增
             config.placeInterval = placeInterval;
             config.placeRandomness = placeRandomness;
             config.placeRandomnessEnabled = placeRandomnessCheckbox.selected();
             config.useBoneMeal = placeUseBoneMealCheckbox.selected();
-            config.avoidInteractableBlocks = avoidInteractableBlocksCheckbox.selected();
+            config.avoidInteractableBlocks = avoidInteractableBlocksCheckbox.selected(); // ✅ 新增
             config.humanizeClicks = humanizeClicksCheckbox.selected();
 
             // 保存到文件
