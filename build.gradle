@@ -7,7 +7,7 @@ version = "fabric-1.21.10"
 group = "com.example.autoclicker"
 
 base {
-    archivesName = "[自动攻击]autoclicker"
+    archivesName = "Autoclicker"
 }
 
 repositories {

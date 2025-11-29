@@ -1,4 +1,10 @@
 {
+  "key.autoclicker.attack_toggle": "Toggle Auto Attack",
+  "key.autoclicker.place_toggle": "Toggle Auto Place",
+  "key.autoclicker.config": "Open Config",
   "category.autoclicker.main": "Auto Clicker",
-  "key.autoclicker.toggle": "Toggle Auto Clicker"
+
+  "text.autoclicker.auto_attack": "Auto Attack",
+  "text.autoclicker.auto_place": "Auto Place",
+  "text.autoclicker.config_screen": "Auto Clicker Config"
 }

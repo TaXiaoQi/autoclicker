@@ -1,4 +1,10 @@
 {
-  "key.autoclicker.toggle": "自动攻击按键",
-  "category.autoclicker.main": "自动点击器"
+  "key.autoclicker.attack_toggle": "开关自动攻击",
+  "key.autoclicker.place_toggle": "开关自动放置",
+  "key.autoclicker.config": "打开配置",
+  "category.autoclicker.main": "自动点击器",
+
+  "text.autoclicker.auto_attack": "自动攻击",
+  "text.autoclicker.auto_place": "自动放置",
+  "text.autoclicker.config_screen": "自动点击器配置"
 }

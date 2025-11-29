@@ -18,6 +18,13 @@ public class ConfigScreen extends Screen {
 
     private final Screen parent;
     private final Config config;
+    private EditBox attackIntervalField;
+    private Checkbox attackArmorStandCheckbox;
+    private Checkbox attackHostileMobsCheckbox;
+    private Checkbox attackNeutralMobsCheckbox;
+    private Checkbox attackPassiveMobsCheckbox;
+    private EditBox placeIntervalField;
+    private Checkbox placeUseBoneMealCheckbox;
 
     protected ConfigScreen(Screen parent) {
         super(Component.literal("自动点击器配置"));
@@ -32,27 +39,23 @@ public class ConfigScreen extends Screen {
         // 使用 LinearLayout
         LinearLayout layout = LinearLayout.vertical().spacing(10);
 
-        // 标题 - 使用 StringWidget 替代 Label
-        StringWidget titleWidget = new StringWidget(
-                Component.literal("自动点击器配置"),
+        // === 自动攻击配置 ===
+        StringWidget attackTitle = new StringWidget(
+                Component.literal("自动攻击配置"),
                 this.font
         );
-        layout.addChild(titleWidget);
+        layout.addChild(attackTitle);
 
         // 攻击间隔设置
-        LinearLayout intervalLayout = LinearLayout.horizontal().spacing(5);
-
-        // 间隔标签
-        StringWidget intervalLabel = new StringWidget(
+        LinearLayout attackIntervalLayout = LinearLayout.horizontal().spacing(5);
+        attackIntervalLayout.addChild(new StringWidget(
                 Component.literal("攻击间隔 (ticks):"),
                 this.font
-        );
-        intervalLayout.addChild(intervalLabel);
+        ));
 
-        // 间隔输入框
-        EditBox intervalField = new EditBox(this.font, 100, 20, Component.literal("攻击间隔"));
-        intervalField.setValue(String.valueOf(config.attackInterval));
-        intervalField.setFilter(s -> {
+        attackIntervalField = new EditBox(this.font, 100, 20, Component.literal("攻击间隔"));
+        attackIntervalField.setValue(String.valueOf(config.attackInterval));
+        attackIntervalField.setFilter(s -> {
             if (s.isEmpty()) return true;
             try {
                 int value = Integer.parseInt(s);
@@ -61,59 +64,87 @@ public class ConfigScreen extends Screen {
                 return false;
             }
         });
-        intervalLayout.addChild(intervalField);
-        layout.addChild(intervalLayout);
+        attackIntervalLayout.addChild(attackIntervalField);
+        layout.addChild(attackIntervalLayout);
 
-        // 攻击目标类型 - 使用 Checkbox
-        Checkbox armorStandCheckbox = Checkbox.builder(
+        // 攻击目标类型
+        attackArmorStandCheckbox = Checkbox.builder(
                 Component.literal("攻击盔甲架"),
                 this.font
         ).selected(config.attackArmorStands).build();
-        layout.addChild(armorStandCheckbox);
+        layout.addChild(attackArmorStandCheckbox);
 
-        Checkbox hostileMobsCheckbox = Checkbox.builder(
+        attackHostileMobsCheckbox = Checkbox.builder(
                 Component.literal("攻击敌对生物"),
                 this.font
         ).selected(config.attackHostileMobs).build();
-        layout.addChild(hostileMobsCheckbox);
+        layout.addChild(attackHostileMobsCheckbox);
 
-        Checkbox neutralMobsCheckbox = Checkbox.builder(
+        attackNeutralMobsCheckbox = Checkbox.builder(
                 Component.literal("攻击中立生物"),
                 this.font
         ).selected(config.attackNeutralMobs).build();
-        layout.addChild(neutralMobsCheckbox);
+        layout.addChild(attackNeutralMobsCheckbox);
 
-        Checkbox passiveMobsCheckbox = Checkbox.builder(
+        attackPassiveMobsCheckbox = Checkbox.builder(
                 Component.literal("攻击被动生物"),
                 this.font
         ).selected(config.attackPassiveMobs).build();
-        layout.addChild(passiveMobsCheckbox);
+        layout.addChild(attackPassiveMobsCheckbox);
 
-        // 按钮行
+        // === 自动放置配置 ===
+        StringWidget placeTitle = new StringWidget(
+                Component.literal("自动放置配置"),
+                this.font
+        );
+        layout.addChild(placeTitle);
+
+        // 放置间隔设置
+        LinearLayout placeIntervalLayout = LinearLayout.horizontal().spacing(5);
+        placeIntervalLayout.addChild(new StringWidget(
+                Component.literal("放置间隔 (ticks):"),
+                this.font
+        ));
+
+        placeIntervalField = new EditBox(this.font, 100, 20, Component.literal("放置间隔"));
+        placeIntervalField.setValue(String.valueOf(config.placeInterval));
+        placeIntervalField.setFilter(s -> {
+            if (s.isEmpty()) return true;
+            try {
+                int value = Integer.parseInt(s);
+                return value > 0;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        });
+        placeIntervalLayout.addChild(placeIntervalField);
+        layout.addChild(placeIntervalLayout);
+
+        // 骨粉开关
+        placeUseBoneMealCheckbox = Checkbox.builder(
+                Component.literal("自动使用骨粉"),
+                this.font
+        ).selected(config.useBoneMeal).build();
+        layout.addChild(placeUseBoneMealCheckbox);
+
+        // === 按钮行 ===
         LinearLayout buttonLayout = LinearLayout.horizontal().spacing(10);
 
         // 保存按钮
-        Button saveButton = Button.builder(
-                Component.literal("保存"),
-                button -> saveConfig(
-                        intervalField.getValue(),
-                        armorStandCheckbox.selected(),
-                        hostileMobsCheckbox.selected(),
-                        neutralMobsCheckbox.selected(),
-                        passiveMobsCheckbox.selected()
-                )
-        ).build();
+        Button saveButton = Button.builder(Component.literal("保存"), button -> {
+            saveConfig();
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(parent);
+            }
+        }).build();
         buttonLayout.addChild(saveButton);
 
         // 取消按钮
-        Button cancelButton = Button.builder(
-                Component.literal("取消"),
-                button -> {
-                    if (this.minecraft != null) {
-                        this.minecraft.setScreen(parent);
-                    }
-                }
-        ).build();
+        Button cancelButton = Button.builder(Component.literal("取消"), button -> {
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(parent);
+            }
+        }).build();
         buttonLayout.addChild(cancelButton);
 
         layout.addChild(buttonLayout);
@@ -141,15 +172,13 @@ public class ConfigScreen extends Screen {
         return new Config();
     }
 
-    private void saveConfig(String intervalValue, boolean attackArmorStands,
-                            boolean attackHostileMobs, boolean attackNeutralMobs,
-                            boolean attackPassiveMobs) {
+    private void saveConfig() {
         try {
             // 验证攻击间隔
-            int interval;
+            int attackInterval;
             try {
-                interval = Integer.parseInt(intervalValue);
-                if (interval < 1) {
+                attackInterval = Integer.parseInt(attackIntervalField.getValue());
+                if (attackInterval < 1) {
                     if (minecraft != null && minecraft.player != null) {
                         minecraft.player.displayClientMessage(
                                 Component.literal("§c攻击间隔必须大于0"),
@@ -168,12 +197,37 @@ public class ConfigScreen extends Screen {
                 return;
             }
 
+            // 验证放置间隔
+            int placeInterval;
+            try {
+                placeInterval = Integer.parseInt(placeIntervalField.getValue());
+                if (placeInterval < 1) {
+                    if (minecraft != null && minecraft.player != null) {
+                        minecraft.player.displayClientMessage(
+                                Component.literal("§c放置间隔必须大于0"),
+                                true
+                        );
+                    }
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                if (minecraft != null && minecraft.player != null) {
+                    minecraft.player.displayClientMessage(
+                            Component.literal("§c放置间隔必须是有效数字"),
+                            true
+                    );
+                }
+                return;
+            }
+
             // 更新配置
-            config.attackInterval = interval;
-            config.attackArmorStands = attackArmorStands;
-            config.attackHostileMobs = attackHostileMobs;
-            config.attackNeutralMobs = attackNeutralMobs;
-            config.attackPassiveMobs = attackPassiveMobs;
+            config.attackInterval = attackInterval;
+            config.attackArmorStands = attackArmorStandCheckbox.selected();
+            config.attackHostileMobs = attackHostileMobsCheckbox.selected();
+            config.attackNeutralMobs = attackNeutralMobsCheckbox.selected();
+            config.attackPassiveMobs = attackPassiveMobsCheckbox.selected();
+            config.placeInterval = placeInterval;
+            config.useBoneMeal = placeUseBoneMealCheckbox.selected();
 
             // 保存到文件
             Files.createDirectories(CONFIG_PATH.getParent());
