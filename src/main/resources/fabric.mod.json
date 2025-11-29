@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "id": "autoclicker",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "name": "Auto Clicker",
   "description": "自动点击",
   "authors": [
     "小奇"
   ],
   "contact": {
-    "homepage": "https://github.com/TaXiaoQi",
+    "homepage": "https://github.com/TaXiaoQi/autoclicker",
     "sources": "https://github.com/TaXiaoQi/autoclicker",
     "repo": "https://github.com/dyzxs/AutoClicker"
   },
@@ -18,6 +18,9 @@
   "entrypoints": {
     "client": [
       "com.example.autoclicker.AutoClicker"
+    ],
+    "modmenu": [
+      "com.example.autoclicker.ModMenuIntegration"
     ]
   },
   "depends": {
@@ -27,6 +30,6 @@
     "java": ">=21"
   },
   "suggests": {
-    "another-mod": "*"
+    "modmenu": "*"
   }
 }
