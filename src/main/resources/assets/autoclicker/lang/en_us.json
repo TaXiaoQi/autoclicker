@@ -6,5 +6,6 @@
 
   "text.autoclicker.auto_attack": "Auto Attack",
   "text.autoclicker.auto_place": "Auto Place",
-  "text.autoclicker.config_screen": "Auto Clicker Config"
+  "text.autoclicker.config_screen": "Auto Clicker Config",
+  "mod.name": "Auto clicker"
 }
