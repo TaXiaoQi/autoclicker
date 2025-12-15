@@ -54,31 +54,42 @@
 配置文件路径：  
 .minecraft/config/autoclicker.json
 
-主要配置项：
 
+#### 📄 标准可运行配置（`autoclicker.json`）：
 ```json
 {
-  // ========== 自动攻击设置 ==========
-  "autoAttackEnabled": false,        // 是否启用自动攻击
-  "attackInterval": 20,              // 基础攻击间隔（单位：游戏刻，20 = 1秒）
-  "attackRandomness": 5,             // 攻击间隔随机偏移量（实际间隔 = attackInterval + [0, attackRandomness]）
-  "attackRandomnessEnabled": true,   // 是否启用攻击间隔随机性
-  "attackArmorStands": true,         // 是否攻击盔甲架
-  "attackHostileMobs": true,         // 是否攻击敌对生物（如僵尸、骷髅）
-  "attackNeutralMobs": false,        // 是否攻击中立生物（如蜘蛛、末影人）
-  "attackPassiveMobs": false,        // 是否攻击被动生物（如牛、羊）— 当前逻辑未完全启用
-
-  // ========== 自动放置与骨粉设置 ==========
-  "autoPlaceEnabled": false,         // 是否启用自动放置/骨粉
-  "placeInterval": 5,                // 基础放置或骨粉使用间隔（游戏刻）
-  "placeRandomness": 3,              // 放置间隔随机偏移量
-  "placeRandomnessEnabled": true,    // 是否启用放置间隔随机性
-  "useBoneMeal": true,               // 是否自动对可催熟植物使用骨粉
-
-  // ========== 反检测/人性化设置 ==========
-  "humanizeClicks": true             // 启用人性化点击（约10%概率跳过操作，骨粉有额外50%跳过率）
+  "autoAttackEnabled": false,
+  "attackInterval": 20,
+  "attackRandomness": 5,
+  "attackRandomnessEnabled": true,
+  "attackArmorStands": true,
+  "attackHostileMobs": true,
+  "attackNeutralMobs": false,
+  "attackPassiveMobs": false,
+  "autoPlaceEnabled": false,
+  "placeInterval": 5,
+  "placeRandomness": 3,
+  "placeRandomnessEnabled": true,
+  "useBoneMeal": true,
+  "humanizeClicks": true
 }
 ```
+| 字段 | 含义 |
+|------|------|
+| `autoAttackEnabled` | 开启/关闭自动攻击 |
+| `attackInterval` | 攻击基础频率（≥1，单位：游戏刻） |
+| `attackRandomness` | 攻击间隔随机延迟上限（≥0） |
+| `attackRandomnessEnabled` | 是否启用攻击间隔随机性 |
+| `attackArmorStands` | 是否攻击盔甲架 |
+| `attackHostileMobs` | 是否攻击敌对生物（如僵尸、骷髅） |
+| `attackNeutralMobs` | 是否攻击中立生物（如蜘蛛、末影人） |
+| `attackPassiveMobs` | 是否攻击被动生物（如牛、羊）— 当前逻辑未完全启用 |
+| `autoPlaceEnabled` | 开启/关闭自动放置与骨粉 |
+| `placeInterval` | 放置/骨粉基础频率（≥1，单位：游戏刻） |
+| `placeRandomness` | 放置间隔随机延迟上限（≥0） |
+| `placeRandomnessEnabled` | 是否启用放置间隔随机性 |
+| `useBoneMeal` | 是否自动对可催熟植物使用骨粉 |
+| `humanizeClicks` | 启用反检测（约10%概率跳过点击，骨粉额外50%跳过率） |
 ## 🧩 依赖
 
 - **Minecraft** `1.19+`（具体版本取决于编译环境）
