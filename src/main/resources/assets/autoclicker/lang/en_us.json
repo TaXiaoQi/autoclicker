@@ -7,5 +7,28 @@
   "text.autoclicker.auto_attack": "Auto Attack",
   "text.autoclicker.auto_place": "Auto Place",
   "text.autoclicker.config_screen": "Auto Clicker Config",
-  "mod.name": "Auto clicker"
+  "mod.name": "Auto clicker",
+
+  "screen.autoclicker.config.title": "Auto Clicker Configuration",
+  "screen.autoclicker.section.attack": "=== Auto Attack Settings ===",
+  "screen.autoclicker.section.place": "=== Auto Place Settings ===",
+  "screen.autoclicker.section.anti_detection": "=== Anti-Detection Settings ===",
+
+  "config.autoclicker.attack_interval": "Attack Interval (ticks):",
+  "config.autoclicker.attack_randomness": "Attack Randomness (±):",
+  "config.autoclicker.enable_attack_randomness": "Enable Attack Randomness",
+  "config.autoclicker.attack_armor_stands": "Attack Armor Stands",
+  "config.autoclicker.attack_hostile_mobs": "Attack Hostile Mobs",
+  "config.autoclicker.attack_neutral_mobs": "Attack Neutral Mobs",
+  "config.autoclicker.attack_passive_mobs": "Attack Passive Mobs",
+
+  "config.autoclicker.place_interval": "Place Interval (ticks):",
+  "config.autoclicker.place_randomness": "Place Randomness (± ticks):",
+  "config.autoclicker.enable_place_randomness": "Enable Place Randomness",
+  "config.autoclicker.use_bone_meal": "Use Bone Meal Automatically",
+
+  "config.autoclicker.humanize_clicks": "Humanize Clicks (Random Skip)",
+
+  "gui.autoclicker.save": "Save",
+  "gui.autoclicker.cancel": "Cancel"
 }
