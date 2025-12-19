@@ -28,6 +28,22 @@
   "config.autoclicker.use_bone_meal": "自动使用骨粉",
 
   "config.autoclicker.humanize_clicks": "人性化点击 (随机跳过)",
+  "autoclicker.error.attack_interval_positive": "§c攻击间隔必须大于0",
+  "autoclicker.error.attack_randomness_non_negative": "§c攻击随机性不能为负数",
+  "autoclicker.error.place_interval_positive": "§c放置间隔必须大于0",
+  "autoclicker.error.place_randomness_non_negative": "§c放置随机性不能为负数",
+  "autoclicker.error.save_failed": "§c保存配置失败，请查看日志",
+  "autoclicker.message.config_saved": "§a配置已保存并重载",
+
+  "autoclicker.message.attack_toggle": "自动攻击: %s | 间隔: %s-%sticks",
+  "autoclicker.message.place_toggle": "自动放置: %s | 间隔: %s-%sticks | %s",
+  "autoclicker.message.auto_disabled_timeout": "§c%s已因长时间未触发而关闭",
+  "gui.autoclicker.enabled": "§a开启",
+  "gui.autoclicker.disabled": "§c关闭",
+  "autoclicker.bonemeal.included": "含骨粉",
+  "autoclicker.bonemeal.excluded": "不含骨粉",
+  "autoclicker.feature.attack": "自动攻击",
+  "autoclicker.feature.place": "自动放置",
 
   "gui.autoclicker.save": "保存",
   "gui.autoclicker.cancel": "取消"

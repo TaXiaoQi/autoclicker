@@ -27,7 +27,23 @@
   "config.autoclicker.enable_place_randomness": "Enable Place Randomness",
   "config.autoclicker.use_bone_meal": "Use Bone Meal Automatically",
 
+  "autoclicker.error.attack_interval_positive": "§cAttack interval must be greater than 0",
+  "autoclicker.error.attack_randomness_non_negative": "§cAttack randomness cannot be negative",
+  "autoclicker.error.place_interval_positive": "§cPlace interval must be greater than 0",
+  "autoclicker.error.place_randomness_non_negative": "§cPlace randomness cannot be negative",
+  "autoclicker.error.save_failed": "§cFailed to save config, check logs",
+  "autoclicker.message.config_saved": "§aConfig saved and reloaded",
   "config.autoclicker.humanize_clicks": "Humanize Clicks (Random Skip)",
+
+  "autoclicker.message.attack_toggle": "Auto Attack: %s | Interval: %s-%sticks",
+  "autoclicker.message.place_toggle": "Auto Place: %s | Interval: %s-%sticks | %s",
+  "autoclicker.message.auto_disabled_timeout": "§c%s disabled due to inactivity",
+  "gui.autoclicker.enabled": "§aEnabled",
+  "gui.autoclicker.disabled": "§cDisabled",
+  "autoclicker.bonemeal.included": "With Bone Meal",
+  "autoclicker.bonemeal.excluded": "Without Bone Meal",
+  "autoclicker.feature.attack": "Auto Attack",
+  "autoclicker.feature.place": "Auto Place",
 
   "gui.autoclicker.save": "Save",
   "gui.autoclicker.cancel": "Cancel"

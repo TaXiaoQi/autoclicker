@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -90,14 +91,20 @@ public class AutoClicker implements ClientModInitializer {
             attackTickCounter = 0;
             updateAttackInterval();
             if (config.autoAttackEnabled) {
-                // ✅ 开启时重置最后活跃时间为现在，防止立即超时
                 lastAttackGameTime = currentGameTime;
             }
+
             if (client.player != null) {
-                String status = config.autoAttackEnabled ? "§a开启" : "§c关闭";
+                String status = config.autoAttackEnabled ?
+                        Component.translatable("gui.autoclicker.enabled").getString() :
+                        Component.translatable("gui.autoclicker.disabled").getString();
+
                 client.player.displayClientMessage(
-                        net.minecraft.network.chat.Component.literal("自动攻击: " + status + " | 间隔: " +
-                                config.attackInterval + "-" + (config.attackInterval + config.attackRandomness) + "ticks"),
+                        Component.translatable("autoclicker.message.attack_toggle",
+                                status,
+                                config.attackInterval,
+                                config.attackInterval + config.attackRandomness
+                        ),
                         true
                 );
             }
