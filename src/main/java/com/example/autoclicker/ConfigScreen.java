@@ -24,7 +24,7 @@ public class ConfigScreen extends Screen {
     private Checkbox attackArmorStandCheckbox;
     private Checkbox attackHostileMobsCheckbox;
     private Checkbox attackNeutralMobsCheckbox;
-    private Checkbox attackPassiveMobsCheckbox; // ✅ 新增
+    private Checkbox attackPassiveMobsCheckbox;
     private EditBox placeIntervalField;
     private EditBox placeRandomnessField;
     private Checkbox placeRandomnessCheckbox;

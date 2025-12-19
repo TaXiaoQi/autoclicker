@@ -1,4 +1,4 @@
-# 🤖 AutoClicker — Minecraft Fabric 自动点击器模组
+# 🤖 AutoClicker — 自动点击器模组
 
 > 一个轻量、智能、反检测的 Minecraft 客户端自动化工具，支持自动攻击与自动种植/骨粉，专为挂机农场与刷怪塔设计。
 
