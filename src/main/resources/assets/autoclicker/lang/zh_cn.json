@@ -45,6 +45,8 @@
   "autoclicker.feature.attack": "自动攻击",
   "autoclicker.feature.place": "自动放置",
 
+  "mod.autoclicker.description": "实现自动攻击与自动种植的辅助模组",
+
   "gui.autoclicker.save": "保存",
   "gui.autoclicker.cancel": "取消"
 }

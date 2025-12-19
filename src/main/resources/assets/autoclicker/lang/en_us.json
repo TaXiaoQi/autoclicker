@@ -45,6 +45,8 @@
   "autoclicker.feature.attack": "Auto Attack",
   "autoclicker.feature.place": "Auto Place",
 
+  "mod.autoclicker.description": "A utility mod for auto-attack and auto-planting",
+
   "gui.autoclicker.save": "Save",
   "gui.autoclicker.cancel": "Cancel"
 }

@@ -292,7 +292,7 @@ public class ConfigScreen extends Screen {
 
     private void showError(Component message) {
         if (minecraft != null && minecraft.player != null) {
-            minecraft.player.displayClientMessage(message.withStyle(ChatFormatting.RED), true);
+            minecraft.player.displayClientMessage(message, true);
         }
     }
 

@@ -8,4 +8,5 @@ public class ModMenuIntegration implements ModMenuApi {
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
         return ConfigScreen::new;
     }
+
 }

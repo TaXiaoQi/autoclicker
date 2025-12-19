@@ -117,15 +117,25 @@ public class AutoClicker implements ClientModInitializer {
             placeTickCounter = 0;
             updatePlaceInterval();
             if (config.autoPlaceEnabled) {
-                // ✅ 开启时重置最后活跃时间为现在
                 lastPlaceGameTime = currentGameTime;
             }
+
             if (client.player != null) {
-                String status = config.autoPlaceEnabled ? "§a开启" : "§c关闭";
-                String boneMealStatus = config.useBoneMeal ? "含骨粉" : "不含骨粉";
+                String status = config.autoPlaceEnabled ?
+                        Component.translatable("gui.autoclicker.enabled").getString() :
+                        Component.translatable("gui.autoclicker.disabled").getString();
+
+                String boneMealStatus = config.useBoneMeal ?
+                        Component.translatable("autoclicker.bonemeal.included").getString() :
+                        Component.translatable("autoclicker.bonemeal.excluded").getString();
+
                 client.player.displayClientMessage(
-                        net.minecraft.network.chat.Component.literal("自动放置: " + status + " | 间隔: " +
-                                config.placeInterval + "-" + (config.placeInterval + config.placeRandomness) + "ticks | " + boneMealStatus),
+                        Component.translatable("autoclicker.message.place_toggle",
+                                status,
+                                config.placeInterval,
+                                config.placeInterval + config.placeRandomness,
+                                boneMealStatus
+                        ),
                         true
                 );
             }
@@ -162,7 +172,9 @@ public class AutoClicker implements ClientModInitializer {
             attackTickCounter = 0;
             if (client.player != null) {
                 client.player.displayClientMessage(
-                        net.minecraft.network.chat.Component.literal("§c自动攻击已因长时间未触发而关闭"),
+                        Component.translatable("autoclicker.message.auto_disabled_timeout",
+                                Component.translatable("autoclicker.feature.attack").getString()
+                        ),
                         true
                 );
             }
@@ -176,7 +188,9 @@ public class AutoClicker implements ClientModInitializer {
             placeTickCounter = 0;
             if (client.player != null) {
                 client.player.displayClientMessage(
-                        net.minecraft.network.chat.Component.literal("§c自动放置已因长时间未触发而关闭"),
+                        Component.translatable("autoclicker.message.auto_disabled_timeout",
+                                Component.translatable("autoclicker.feature.place").getString()
+                        ),
                         true
                 );
             }
