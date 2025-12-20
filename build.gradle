@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.5-SNAPSHOT'
+    id 'fabric-loom' version '1.14-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -25,8 +25,8 @@ dependencies {
     mappings loom.layered() {
         officialMojangMappings()
     }
-    modImplementation "net.fabricmc:fabric-loader:0.17.0"
-    modImplementation "com.terraformersmc:modmenu:7.2.2"
+    modImplementation "net.fabricmc:fabric-loader:0.18.0"
+    modImplementation "com.terraformersmc:modmenu:13.0.3"
     modImplementation "net.fabricmc.fabric-api:fabric-api:0.138.3+1.21.10"
 }
 
