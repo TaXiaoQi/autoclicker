@@ -1,4 +1,6 @@
 {
+  "mod.autoclicker.name": "自动点击器",
+  "modmenu.descriptionTranslation.autoclicker": "实现 自动攻击 | 自动种植 的模组",
   "screen.autoclicker.title": "自动点击器设置",
   "screen.autoclicker.options": "选项",
 

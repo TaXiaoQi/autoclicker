@@ -1,4 +1,6 @@
 {
+  "mod.autoclicker.name": "Autoclicker",
+  "modmenu.descriptionTranslation.autoclicker": "A mod for auto-attacking and auto-planting.",
   "screen.autoclicker.title": "Auto Clicker Settings",
   "screen.autoclicker.options": "Options",
 
