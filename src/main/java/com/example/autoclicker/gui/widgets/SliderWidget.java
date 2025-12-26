@@ -40,12 +40,20 @@ public class SliderWidget extends AbstractSliderButton {
         }
     }
     public void setIntValue(int value) {
-        // 计算并设置滑块位置
+        // 确保值在范围内
         value = Math.max((int)minValue, Math.min(value, (int)maxValue));
-        double normalized = (value - minValue) / (maxValue - minValue);
-        this.value = normalized;
+
+        // 设置内部值（直接计算并赋值）
+        this.value = (value - minValue) / (maxValue - minValue);
+        this.displayValue = value;
+
+        // 更新显示文本
         updateMessage();
-        applyValue();
+
+        // 触发回调（如果存在）
+        if (onChange != null) {
+            onChange.accept((double) value);
+        }
     }
 
     public double getValue() {

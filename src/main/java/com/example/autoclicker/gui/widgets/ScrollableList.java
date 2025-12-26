@@ -17,8 +17,8 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     private int contentHeight = 0;
     private boolean dragging = false;
     private double lastMouseY;
-    private int scrollBarWidth = 6;
-    private int childSpacing = 4; // 元素间距
+    private final int scrollBarWidth = 6;
+    private final int childSpacing = 4; // 元素间距
 
     public ScrollableList(int x, int y, int width, int height, Component title) {
         super(x, y, width, height, title);
@@ -128,7 +128,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (dragging) {
             double mouseDelta = mouseY - lastMouseY;
-            scrollOffset -= mouseDelta * (contentHeight / (double) height);
+            scrollOffset -= (int) (mouseDelta * (contentHeight / (double) height));
             scrollOffset = Math.max(0, Math.min(scrollOffset, contentHeight - height));
             lastMouseY = mouseY;
             return true;
@@ -148,7 +148,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (isMouseOver(mouseX, mouseY)) {
-            scrollOffset -= scrollY * 20; // 滚动速度
+            scrollOffset -= (int) (scrollY * 20); // 滚动速度
             scrollOffset = Math.max(0, Math.min(scrollOffset, contentHeight - height));
             return true;
         }
