@@ -18,18 +18,16 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     private int scrollOffset = 0;
     private int contentHeight = 0;
     private boolean draggingScrollBar = false;
-    private double dragStartMouseY = 0;
-    private float dragStartScrollRatio = 0.0F;
+    private double dragStartSliderOffset = 0.0; // 鼠标相对于滑块顶部的偏移
 
     // 原版风格常量
-    private static final int SCROLL_BAR_WIDTH = 6;
-    private static final int SCROLL_BAR_RIGHT_PADDING = 0;
     private static final int CONTENT_TOP_PADDING = 4;
     private static final int CONTENT_BOTTOM_PADDING = 4;
-    private static final int CONTENT_LEFT_PADDING = 0;
+    private static final int SCROLL_BAR_WIDTH = 6;
     private static final int CHILD_SPACING = 4;
     private static final int SCROLL_SPEED = 20;
     private static final int BACKGROUND_COLOR = 0x80101010; // 半透明深灰色
+    private static final int SCROLL_BAR_RIGHT_PADDING = 15;   // 滚动条右侧留白
 
     public ScrollableList(int x, int y, int width, int height, Component title) {
         super(x, y, width, height, title);
@@ -66,16 +64,28 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         return this.height - CONTENT_TOP_PADDING - CONTENT_BOTTOM_PADDING;
     }
 
+    private boolean needsScrollBar() {
+        return contentHeight > getVisibleContentHeight();
+    }
+
     private int getContentX() {
-        return this.getX() + CONTENT_LEFT_PADDING;
+        return this.getX();
     }
 
     private int getContentWidth() {
-        return this.width - CONTENT_LEFT_PADDING - SCROLL_BAR_WIDTH - SCROLL_BAR_RIGHT_PADDING;
+        return this.width;
     }
 
     private int getScrollBarX() {
         return this.getX() + this.width - SCROLL_BAR_WIDTH - SCROLL_BAR_RIGHT_PADDING;
+    }
+
+    // ✅ 统一滑块高度计算（关键！）
+    private int calculateSliderHeight(int trackHeight) {
+        if (!needsScrollBar()) return trackHeight;
+        float ratio = (float) trackHeight / contentHeight;
+        int h = Math.max(15, (int) (trackHeight * ratio));
+        return Math.min(h, trackHeight);
     }
 
     @Override
@@ -85,20 +95,20 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         int w = width;
         int h = height;
 
-        // 绘制深色半透明背景（幕布）
+        // 背景
         graphics.fill(x, y, x + w, y + h, BACKGROUND_COLOR);
 
-        // 绘制灰色描边（仅顶部和底部，左右顶满）
-        int borderColor = 0xFF8B8B8B; // 灰色
-        graphics.fill(x, y, x + w, y + 1, borderColor);         // 上边
-        graphics.fill(x, y + h - 1, x + w, y + h, borderColor); // 下边
+        // 上下描边
+        int borderColor = 0xFF8B8B8B;
+        graphics.fill(x, y, x + w, y + 1, borderColor);
+        graphics.fill(x, y + h - 1, x + w, y + h, borderColor);
 
-        // 启用剪裁：限制内容绘制区域
+        // 剪裁内容区
         int clipTop = y + CONTENT_TOP_PADDING;
         int clipBottom = y + h - CONTENT_BOTTOM_PADDING;
         graphics.enableScissor(x, clipTop, x + w, clipBottom);
 
-        // 渲染子控件（居中），临时设置位置后立即恢复
+        // 渲染子控件（居中）
         int yPos = y + CONTENT_TOP_PADDING - scrollOffset;
         int contentWidth = getContentWidth();
         int contentX = getContentX();
@@ -107,14 +117,13 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
             int childWidth = Math.max(1, child.getWidth());
             int childX = contentX + Math.max(0, (contentWidth - childWidth) / 2);
 
-            // 临时修改位置用于渲染
             int oldX = child.getX();
             int oldY = child.getY();
             child.setX(childX);
             child.setY(yPos);
             child.render(graphics, mouseX, mouseY, delta);
-            child.setX(oldX); // 恢复原始 x
-            child.setY(oldY); // 恢复原始 y
+            child.setX(oldX);
+            child.setY(oldY);
 
             yPos += child.getHeight() + CHILD_SPACING;
         }
@@ -122,7 +131,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         graphics.disableScissor();
 
         // 绘制滚动条（如果需要）
-        if (contentHeight > getVisibleContentHeight()) {
+        if (needsScrollBar()) {
             drawScrollBar(graphics);
         }
     }
@@ -130,25 +139,27 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     private void drawScrollBar(GuiGraphics graphics) {
         int scrollBarX = getScrollBarX();
         int scrollBarRight = scrollBarX + SCROLL_BAR_WIDTH;
-        int top = getY() + CONTENT_TOP_PADDING;
+        int top = getY();
         int bottom = getY() + height - CONTENT_BOTTOM_PADDING;
-        int visibleHeight = bottom - top;
+        int trackHeight = bottom - top;
 
-        float visibleRatio = (float) visibleHeight / contentHeight;
-        int sliderHeight = Math.max(15, (int) (visibleHeight * visibleRatio));
-        sliderHeight = Math.min(sliderHeight, visibleHeight);
+        graphics.fill(scrollBarX, top, scrollBarRight, bottom, 0xFF000000);
 
-        float scrollRatio = contentHeight <= visibleHeight ? 0.0F :
-                (float) scrollOffset / (contentHeight - visibleHeight);
-        int sliderY = top + (int) ((visibleHeight - sliderHeight) * scrollRatio);
+        if (!needsScrollBar()) {
+            return;
+        }
 
-        // 滑块主体
-        graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + sliderHeight, 0xFF808080);
-        // 边框（可选，增强视觉）
-        graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + 1, 0xFF404040);
-        graphics.fill(scrollBarX, sliderY + sliderHeight - 1, scrollBarRight, sliderY + sliderHeight, 0xFF404040);
-        graphics.fill(scrollBarX, sliderY, scrollBarX + 1, sliderY + sliderHeight, 0xFF404040);
-        graphics.fill(scrollBarRight - 1, sliderY, scrollBarRight, sliderY + sliderHeight, 0xFF404040);
+        int sliderHeight = calculateSliderHeight(trackHeight);
+        float scrollRatio = (float) scrollOffset / Math.max(1, contentHeight - trackHeight);
+        int sliderY = top + (int) ((trackHeight - sliderHeight) * scrollRatio);
+
+        graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + sliderHeight, 0xFFCCCCCC);
+
+        int edgeColor = 0xFFAAAAAA;
+        graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + 1, edgeColor); // 上边
+        graphics.fill(scrollBarX, sliderY + sliderHeight - 1, scrollBarRight, sliderY + sliderHeight, edgeColor); // 下边
+        graphics.fill(scrollBarX, sliderY, scrollBarX + 1, sliderY + sliderHeight, edgeColor); // 左边
+        graphics.fill(scrollBarRight - 1, sliderY, scrollBarRight, sliderY + sliderHeight, edgeColor); // 右边
     }
 
     // ===== 鼠标事件处理 =====
@@ -158,28 +169,39 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         double mouseX = event.x();
         double mouseY = event.y();
 
-        if (isPointOverScrollBarHandle(mouseX, mouseY)) {
-            draggingScrollBar = true;
-            dragStartMouseY = mouseY;
-            int visibleHeight = getVisibleContentHeight();
-            if (contentHeight > visibleHeight) {
-                dragStartScrollRatio = (float) scrollOffset / (contentHeight - visibleHeight);
-            }
-            return true;
-        }
+        if (needsScrollBar()) {
+            // ✅ 点击滑块：开始拖动
+            if (isPointOverScrollBarHandle(mouseX, mouseY)) {
+                draggingScrollBar = true;
 
-        if (isPointOverScrollBarTrack(mouseX, mouseY)) {
-            int visibleHeight = getVisibleContentHeight();
-            if (contentHeight > visibleHeight) {
                 int trackTop = getY() + CONTENT_TOP_PADDING;
-                float clickRatio = (float) (mouseY - trackTop) / visibleHeight;
-                scrollOffset = (int) (clickRatio * (contentHeight - visibleHeight));
-                clampScrollOffset();
+                int trackHeight = getVisibleContentHeight();
+                int sliderHeight = calculateSliderHeight(trackHeight);
+
+                float scrollRatio = (float) scrollOffset / Math.max(1, contentHeight - trackHeight);
+                int sliderY = trackTop + (int) ((trackHeight - sliderHeight) * scrollRatio);
+
+                dragStartSliderOffset = mouseY - sliderY; // 关键偏移量
+                return true;
             }
-            return true;
+
+            // ✅ 点击轨道：跳转（滑块居中对齐）
+            if (isPointOverScrollBarTrack(mouseX, mouseY)) {
+                int trackTop = getY() + CONTENT_TOP_PADDING;
+                int trackHeight = getVisibleContentHeight();
+                int sliderHeight = calculateSliderHeight(trackHeight);
+
+                double clickInTrack = mouseY - trackTop;
+                double ratio = (clickInTrack - sliderHeight / 2.0) / (trackHeight - sliderHeight);
+                ratio = Mth.clamp(ratio, 0.0, 1.0);
+
+                scrollOffset = (int) (ratio * Math.max(1, contentHeight - trackHeight));
+                clampScrollOffset();
+                return true;
+            }
         }
 
-        // 分发点击事件给子控件
+        // 分发给子控件
         int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
         int contentX = getContentX();
         int contentWidth = getContentWidth();
@@ -194,7 +216,6 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
 
             boolean isVisible = (childBottom >= clipTop && childY <= clipBottom);
             if (isVisible && mouseX >= childX && mouseX < childX + childWidth && mouseY >= childY && mouseY < childY + child.getHeight()) {
-                // 临时设置真实位置，确保 child 内部坐标判断正确
                 int oldX = child.getX();
                 int oldY = child.getY();
                 child.setX(childX);
@@ -202,7 +223,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
                 boolean result = child.mouseClicked(event, isDoubleClick);
                 child.setX(oldX);
                 child.setY(oldY);
-                return result; // 返回 child 的结果，让 Minecraft 记住它用于 mouseDragged
+                return result;
             }
 
             currentY += child.getHeight() + CHILD_SPACING;
@@ -213,21 +234,29 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        if (draggingScrollBar) {
+        if (draggingScrollBar && needsScrollBar()) {
             double mouseY = event.y();
-            int visibleHeight = getVisibleContentHeight();
-            if (contentHeight > visibleHeight) {
-                double mouseDelta = mouseY - dragStartMouseY;
-                float ratioDelta = (float) (mouseDelta / visibleHeight);
-                scrollOffset = (int) ((dragStartScrollRatio + ratioDelta) * (contentHeight - visibleHeight));
-                clampScrollOffset();
-            }
+            int trackTop = getY() + CONTENT_TOP_PADDING;
+            int trackHeight = getVisibleContentHeight();
+            int sliderHeight = calculateSliderHeight(trackHeight);
+
+            // 计算期望滑块顶部位置
+            double desiredSliderTop = mouseY - dragStartSliderOffset;
+            double maxSliderTop = trackTop + trackHeight - sliderHeight;
+            double clampedSliderTop = Mth.clamp(desiredSliderTop, trackTop, maxSliderTop);
+
+            // 映射回滚动比例
+            double ratio = (clampedSliderTop - trackTop) / Math.max(1, trackHeight - sliderHeight);
+            ratio = Mth.clamp(ratio, 0.0, 1.0);
+
+            scrollOffset = (int) (ratio * Math.max(1, contentHeight - trackHeight));
+            clampScrollOffset();
             return true;
         }
 
+        // 分发给子控件（略，保持不变）
         double mouseX = event.x();
         double mouseY = event.y();
-
         int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
         int contentX = getContentX();
         int contentWidth = getContentWidth();
@@ -265,9 +294,9 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
             return true;
         }
 
+        // 分发给子控件（略，保持不变）
         double mouseX = event.x();
         double mouseY = event.y();
-
         int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
         int contentX = getContentX();
         int contentWidth = getContentWidth();
@@ -300,7 +329,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (isMouseOver(mouseX, mouseY)) {
+        if (isMouseOver(mouseX, mouseY) && needsScrollBar()) {
             scrollOffset -= (int) (scrollY * SCROLL_SPEED);
             clampScrollOffset();
             return true;
@@ -310,23 +339,31 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
 
     // ===== 滚动条检测 =====
     private boolean isPointOverScrollBarTrack(double x, double y) {
-        if (contentHeight <= getVisibleContentHeight()) return false;
-        return x >= getScrollBarX() && x <= getScrollBarX() + SCROLL_BAR_WIDTH
-                && y >= getY() + CONTENT_TOP_PADDING
-                && y <= getY() + height - CONTENT_BOTTOM_PADDING;
+        // X 范围：整条滚动条宽度
+        if (x < getScrollBarX() || x > getScrollBarX() + SCROLL_BAR_WIDTH) {
+            return false;
+        }
+        // Y 范围：仅限内容可视区（不包括上下 padding 外的空白）
+        return y >= getY() + CONTENT_TOP_PADDING &&
+                y <= getY() + height - CONTENT_BOTTOM_PADDING;
     }
 
     private boolean isPointOverScrollBarHandle(double x, double y) {
-        if (contentHeight <= getVisibleContentHeight()) return false;
+        if (!needsScrollBar()) return false;
+
+        // 只有在内容可视区内才可能点中滑块
+        if (y < getY() + CONTENT_TOP_PADDING ||
+                y > getY() + height - CONTENT_BOTTOM_PADDING) {
+            return false;
+        }
 
         int scrollBarX = getScrollBarX();
-        int visibleHeight = getVisibleContentHeight();
-        float visibleRatio = (float) visibleHeight / contentHeight;
-        int sliderHeight = Math.max(15, (int) (visibleHeight * visibleRatio));
-        sliderHeight = Math.min(sliderHeight, visibleHeight);
+        int trackTop = getY() + CONTENT_TOP_PADDING;
+        int trackHeight = getVisibleContentHeight();
+        int sliderHeight = calculateSliderHeight(trackHeight);
 
-        float scrollRatio = (float) scrollOffset / (contentHeight - visibleHeight);
-        int sliderY = getY() + CONTENT_TOP_PADDING + (int) ((visibleHeight - sliderHeight) * scrollRatio);
+        float scrollRatio = (float) scrollOffset / Math.max(1, contentHeight - trackHeight);
+        int sliderY = trackTop + (int) ((trackHeight - sliderHeight) * scrollRatio);
 
         return x >= scrollBarX && x <= scrollBarX + SCROLL_BAR_WIDTH
                 && y >= sliderY && y <= sliderY + sliderHeight;
