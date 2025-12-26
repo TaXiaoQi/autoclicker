@@ -23,10 +23,10 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
 
     // 原版风格常量
     private static final int SCROLL_BAR_WIDTH = 6;
-    private static final int SCROLL_BAR_RIGHT_PADDING = 2;
+    private static final int SCROLL_BAR_RIGHT_PADDING = 0;
     private static final int CONTENT_TOP_PADDING = 4;
     private static final int CONTENT_BOTTOM_PADDING = 4;
-    private static final int CONTENT_LEFT_PADDING = 5;
+    private static final int CONTENT_LEFT_PADDING = 0;
     private static final int CHILD_SPACING = 4;
     private static final int SCROLL_SPEED = 20;
     private static final int BACKGROUND_COLOR = 0x80101010; // 半透明深灰色

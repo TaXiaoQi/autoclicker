@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "autoclicker",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "name": "Autoclicker",
   "description": "实现 自动攻击 | 自动种植 的模组",
   "icon": "assets/autoclicker/icon.png",
