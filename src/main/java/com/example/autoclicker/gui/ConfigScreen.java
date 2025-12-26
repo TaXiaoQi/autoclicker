@@ -38,21 +38,25 @@ public class ConfigScreen extends Screen {
         int elementWidth = Math.min(240, width - 2 * margin - 20); // 内容最大宽度
 
         // === 1. 添加主标题（在滚动区域外，屏幕顶部居中）===
-        Component mainTitle = Component.literal("Auto Clicker").withStyle(ChatFormatting.BOLD, ChatFormatting.GOLD);
+        Component mainTitle = Component.literal("Auto Clicker");
         int titleWidth = font.width(mainTitle.getString());
         int titleX = (width - titleWidth) / 2;
         int titleY = 10; // 距离顶部 10px
         addRenderableOnly(new StringWidget(titleX, titleY, titleWidth, 20, mainTitle, font));
 
-        // === 2. 滚动列表：从标题下方开始（预留 40px 高度给标题）===
-        int listTopMargin = 40; // 标题区域高度
-        int listX = margin;
-        int listY = listTopMargin;
-        int listWidth = width - 2 * margin;
-        int listHeight = height - listTopMargin - 50; // 底部留出按钮空间
-
-        ScrollableList scrollList = new ScrollableList(listX, listY, listWidth, listHeight,
-                Component.translatable("screen.autoclicker.options"));
+        // === 2. 滚动列表： ===
+        int listTopMargin = 30;
+        int buttonHeight = 40;
+        int listX = 0;
+        int listWidth = width;
+        int listHeight = height - listTopMargin - buttonHeight;
+        ScrollableList scrollList = new ScrollableList(
+                listX,
+                listTopMargin,
+                listWidth,
+                listHeight,
+                Component.translatable("screen.autoclicker.options")
+        );
         addRenderableWidget(scrollList);
 
         scrollList.clearChildren();
@@ -197,9 +201,9 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
 
         // === 底部按钮 ===
-        int buttonY = height - 35;
-        int buttonWidth = 100;
-        int spacing = 20;
+        int buttonY = height - 30;  // 距离底部的位置
+        int buttonWidth = 150;      // 按钮的宽度
+        int spacing = 10;           // 按钮间隔
 
         Button cancelButton = Button.builder(
                         Component.translatable("gui.cancel").withStyle(ChatFormatting.RED),
@@ -231,7 +235,7 @@ public class ConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        guiGraphics.fill(0, 0, width, height, 0x80000000); // 半透明背景
+        // guiGraphics.fill(0, 0, width, height, 0x80000000);
         super.render(guiGraphics, mouseX, mouseY, delta);
     }
 

@@ -27,7 +27,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     private static final int CHILD_SPACING = 4;
     private static final int SCROLL_SPEED = 20;
     private static final int BACKGROUND_COLOR = 0x80101010; // 半透明深灰色
-    private static final int SCROLL_BAR_RIGHT_PADDING = 15;   // 滚动条右侧留白
+    private static final int SCROLL_BAR_RIGHT_PADDING = 55;   // 滚动条右侧留白
 
     public ScrollableList(int x, int y, int width, int height, Component title) {
         super(x, y, width, height, title);
@@ -99,9 +99,12 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         graphics.fill(x, y, x + w, y + h, BACKGROUND_COLOR);
 
         // 上下描边
-        int borderColor = 0xFF8B8B8B;
-        graphics.fill(x, y, x + w, y + 1, borderColor);
-        graphics.fill(x, y + h - 1, x + w, y + h, borderColor);
+        graphics.fill(x, y, x + w, y + 1, 0x60FFFFFF);    // 外层：半透明白（模拟高光）
+        graphics.fill(x, y + 1, x + w, y + 2, 0x80000000); // 内层：半透明黑
+
+        // 底部
+        graphics.fill(x, y + h - 2, x + w, y + h - 1, 0x80000000); // 内层黑
+        graphics.fill(x, y + h - 1, x + w, y + h, 0x60FFFFFF);     // 外层白
 
         // 剪裁内容区
         int clipTop = y + CONTENT_TOP_PADDING;
@@ -137,29 +140,33 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     }
 
     private void drawScrollBar(GuiGraphics graphics) {
+        if (!needsScrollBar()) return;
+
         int scrollBarX = getScrollBarX();
         int scrollBarRight = scrollBarX + SCROLL_BAR_WIDTH;
-        int top = getY();
-        int bottom = getY() + height - CONTENT_BOTTOM_PADDING;
-        int trackHeight = bottom - top;
 
-        graphics.fill(scrollBarX, top, scrollBarRight, bottom, 0xFF000000);
+        // ✅ 关键修复：滚动条轨道严格对齐内容可视区（+4 到 -4）
+        int trackTop = getY() + CONTENT_TOP_PADDING;
+        int trackBottom = getY() + height - CONTENT_BOTTOM_PADDING;
+        int trackHeight = trackBottom - trackTop;
 
-        if (!needsScrollBar()) {
-            return;
-        }
+        // 绘制滑槽（纯黑）
+        graphics.fill(scrollBarX, trackTop, scrollBarRight, trackBottom, 0xFF000000);
 
+        // 计算滑块
         int sliderHeight = calculateSliderHeight(trackHeight);
         float scrollRatio = (float) scrollOffset / Math.max(1, contentHeight - trackHeight);
-        int sliderY = top + (int) ((trackHeight - sliderHeight) * scrollRatio);
+        int sliderY = trackTop + (int) ((trackHeight - sliderHeight) * scrollRatio);
 
+        // 绘制滑块
         graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + sliderHeight, 0xFFCCCCCC);
 
+        // 边框（可选，保持原样）
         int edgeColor = 0xFFAAAAAA;
-        graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + 1, edgeColor); // 上边
-        graphics.fill(scrollBarX, sliderY + sliderHeight - 1, scrollBarRight, sliderY + sliderHeight, edgeColor); // 下边
-        graphics.fill(scrollBarX, sliderY, scrollBarX + 1, sliderY + sliderHeight, edgeColor); // 左边
-        graphics.fill(scrollBarRight - 1, sliderY, scrollBarRight, sliderY + sliderHeight, edgeColor); // 右边
+        graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + 1, edgeColor);
+        graphics.fill(scrollBarX, sliderY + sliderHeight - 1, scrollBarRight, sliderY + sliderHeight, edgeColor);
+        graphics.fill(scrollBarX, sliderY, scrollBarX + 1, sliderY + sliderHeight, edgeColor);
+        graphics.fill(scrollBarRight - 1, sliderY, scrollBarRight, sliderY + sliderHeight, edgeColor);
     }
 
     // ===== 鼠标事件处理 =====
