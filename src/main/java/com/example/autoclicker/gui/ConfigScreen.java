@@ -45,7 +45,7 @@ public class ConfigScreen extends Screen {
 
         // === 添加配置元素 ===
         int yOffset = 0;
-        int elementWidth = width - 80;
+        int elementWidth = Math.min(240, width - 60);
 
         // 标题
         scrollList.addChild(new net.minecraft.client.gui.components.StringWidget(

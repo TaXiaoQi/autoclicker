@@ -10,35 +10,30 @@ public class SliderWidget extends AbstractSliderButton {
     private final double maxValue;
     private final Component prefix;
     private final Consumer<Double> onChange;
+    private final boolean wasChanged;
 
     public SliderWidget(int x, int y, int width, int height, Component prefix,
                         double minValue, double maxValue, double defaultValue,
                         Consumer<Double> onChange) {
         super(x, y, width, height, Component.empty(),
-                clamp01((defaultValue - minValue) / (maxValue - minValue)));
+                (defaultValue - minValue) / (maxValue - minValue));
         this.prefix = prefix;
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.onChange = onChange;
-        updateMessage(); // 初始化显示
+        this.wasChanged = true; // 初始化完成
+        updateMessage();
     }
 
-    // 工具方法：确保归一化值在 [0,1]
-    private static double clamp01(double v) {
-        return Math.max(0.0, Math.min(1.0, v));
-    }
-
-    // 获取实际值（非归一化）
     public double getActualValue() {
         return minValue + (maxValue - minValue) * this.value;
     }
 
-    // 设置实际值（外部 API）
     public void setActualValue(double value) {
         value = Math.max(minValue, Math.min(maxValue, value));
-        this.value = clamp01((value - minValue) / (maxValue - minValue));
+        this.value = (value - minValue) / (maxValue - minValue);
         updateMessage();
-        if (onChange != null) {
+        if (wasChanged && onChange != null) {
             onChange.accept(value);
         }
     }
@@ -59,9 +54,8 @@ public class SliderWidget extends AbstractSliderButton {
 
     @Override
     protected void applyValue() {
-        if (onChange != null) {
+        if (wasChanged && onChange != null) {
             onChange.accept(getActualValue());
         }
     }
-
 }
