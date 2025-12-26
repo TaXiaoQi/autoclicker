@@ -32,8 +32,8 @@
   "gui.autoclicker.enabled": "已启用",
   "gui.autoclicker.disabled": "已禁用",
 
-  "autoclicker.message.attack_toggle": "自动攻击 %s | 间隔：%d–%d 刻",
-  "autoclicker.message.place_toggle": "自动放置 %s | 间隔：%d–%d 刻 | 骨粉：%s",
+  "autoclicker.message.attack_toggle": "自动攻击已%s（间隔：%s 游戏刻）",
+  "autoclicker.message.place_toggle": "自动放置已%s（间隔：%s 游戏刻，骨粉：%s）",
   "autoclicker.message.auto_disabled_timeout": "自动%s因长时间无操作已关闭（>60秒）",
 
   "autoclicker.feature.attack": "攻击",

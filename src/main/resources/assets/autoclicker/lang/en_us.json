@@ -32,8 +32,8 @@
   "gui.autoclicker.enabled": "Enabled",
   "gui.autoclicker.disabled": "Disabled",
 
-  "autoclicker.message.attack_toggle": "Auto Attack %s | Interval: %d–%d ticks",
-  "autoclicker.message.place_toggle": "Auto Place %s | Interval: %d–%d ticks | Bone Meal: %s",
+  "autoclicker.message.attack_toggle": "Auto-attack %s (%s ticks)",
+  "autoclicker.message.place_toggle": "Auto-place %s (%s ticks, bone meal: %s)",
   "autoclicker.message.auto_disabled_timeout": "Auto %s disabled due to inactivity (>60 seconds)",
 
   "autoclicker.feature.attack": "Attack",

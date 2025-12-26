@@ -100,11 +100,17 @@ public class AutoClicker implements ClientModInitializer {
                         Component.translatable("gui.autoclicker.enabled").getString() :
                         Component.translatable("gui.autoclicker.disabled").getString();
 
+                String intervalText;
+                if (config.attackRandomnessEnabled && config.attackRandomness > 0) {
+                    intervalText = config.attackInterval + " ~ " + (config.attackInterval + config.attackRandomness);
+                } else {
+                    intervalText = String.valueOf(config.attackInterval);
+                }
+
                 client.player.displayClientMessage(
                         Component.translatable("autoclicker.message.attack_toggle",
                                 status,
-                                config.attackInterval,
-                                config.attackInterval + config.attackRandomness
+                                intervalText
                         ),
                         true
                 );
@@ -126,6 +132,13 @@ public class AutoClicker implements ClientModInitializer {
                         Component.translatable("gui.autoclicker.enabled").getString() :
                         Component.translatable("gui.autoclicker.disabled").getString();
 
+                String intervalText;
+                if (config.placeRandomnessEnabled && config.placeRandomness > 0) {
+                    intervalText = config.placeInterval + " ~ " + (config.placeInterval + config.placeRandomness);
+                } else {
+                    intervalText = String.valueOf(config.placeInterval);
+                }
+
                 String boneMealStatus = config.useBoneMeal ?
                         Component.translatable("autoclicker.bonemeal.included").getString() :
                         Component.translatable("autoclicker.bonemeal.excluded").getString();
@@ -133,8 +146,7 @@ public class AutoClicker implements ClientModInitializer {
                 client.player.displayClientMessage(
                         Component.translatable("autoclicker.message.place_toggle",
                                 status,
-                                config.placeInterval,
-                                config.placeInterval + config.placeRandomness,
+                                intervalText,
                                 boneMealStatus
                         ),
                         true
