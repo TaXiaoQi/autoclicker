@@ -1,44 +1,42 @@
 package com.example.autoclicker.gui.elements;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.ChatFormatting;
+import net.minecraft.sounds.SoundEvents;
 
 import java.util.function.Consumer;
 
-// 布尔值元素
-public class BooleanElement extends AbstractWidget implements ConfigElement<Boolean>, GuiEventListener {
+// 布尔值配置元素，用于 GUI 开关
+public class BooleanElement extends AbstractWidget implements ConfigElement<Boolean> {
     private boolean value;
     private final boolean defaultValue;
     private final Consumer<Boolean> onChanged;
-    private final Font font;
-    private final Component label;
+    private final Component originalLabel; // 仅用于重建显示文本
 
     public BooleanElement(int x, int y, int width, int height, Component label,
                           boolean defaultValue, Consumer<Boolean> onChanged) {
-        super(x, y, width, height, label);
-        this.font = Minecraft.getInstance().font;
+        super(x, y, width, height, Component.empty()); // 初始消息为空
+        this.originalLabel = label;
         this.value = defaultValue;
         this.defaultValue = defaultValue;
         this.onChanged = onChanged;
-        this.label = label;
         updateText();
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
         if (this.active && this.visible && this.isMouseOver(event.x(), event.y())) {
-            if (event.buttonInfo().button() == 0) { // 左键
-                this.playDownSound(Minecraft.getInstance().getSoundManager());
+            if (event.buttonInfo().button() == 0) { // 左键点击
+                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
                 this.value = !this.value;
-                this.updateText();
+                updateText();
                 if (this.onChanged != null) {
                     this.onChanged.accept(this.value);
                 }
@@ -50,40 +48,30 @@ public class BooleanElement extends AbstractWidget implements ConfigElement<Bool
 
     private void updateText() {
         Component status = value ?
-                Component.literal("启用").withStyle(ChatFormatting.GREEN) :
-                Component.literal("禁用").withStyle(ChatFormatting.RED);
-
-        setMessage(Component.literal(label.getString() + ": ").append(status));
+                Component.literal("✓ 启用").withStyle(ChatFormatting.GREEN) :
+                Component.literal("✗ 禁用").withStyle(ChatFormatting.RED);
+        setMessage(originalLabel.copy().append(": ").append(status));
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        // 背景颜色
-        int backgroundColor = this.isHoveredOrFocused() ? 0xFF555555 : 0xFF333333;
-        graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, backgroundColor);
+    protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+        // 使用 setMessage 设置好的完整文本直接绘制
+        int textColor = this.active ? 0xFFFFFF : 0xAAAAAA;
+        guiGraphics.drawString(Minecraft.getInstance().font, this.getMessage(), this.getX(), this.getY(), textColor);
 
-        // 文字颜色
-        int textColor = value ? 0xFF00FF00 : 0xFFFF0000;
-
-        // 绘制文字
-        graphics.drawCenteredString(
-                font,
-                getMessage(),
-                this.getX() + this.width / 2,
-                this.getY() + (this.height - 8) / 2,
-                textColor
-        );
-
-        // 悬停效果
-        if (this.isHoveredOrFocused()) {
-            graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x20FFFFFF);
+        // 悬停时绘制半透明高亮边框
+        if (this.isHovered()) {
+            guiGraphics.fill(this.getX() - 1, this.getY() - 1,
+                    this.getRight() + 1, this.getBottom() + 1,
+                    0x40FFFFFF);
         }
     }
 
-    // ConfigElement 实现
+    // ———————— ConfigElement<Boolean> 接口实现 ————————
+
     @Override
     public Boolean getValue() {
-        return value;
+        return this.value;
     }
 
     @Override
@@ -94,17 +82,17 @@ public class BooleanElement extends AbstractWidget implements ConfigElement<Bool
 
     @Override
     public boolean isChanged() {
-        return value != defaultValue;
+        return this.value != this.defaultValue;
     }
 
     @Override
     public void save() {
-        // 保存逻辑在外部处理
+        // 保存逻辑由外部配置系统处理，此处留空
     }
 
     @Override
     public void reset() {
-        value = defaultValue;
+        this.value = this.defaultValue;
         updateText();
     }
 
@@ -113,9 +101,10 @@ public class BooleanElement extends AbstractWidget implements ConfigElement<Bool
         return this;
     }
 
+    // ———————— 叙述支持（无障碍） ————————
+
     @Override
     protected void updateWidgetNarration(NarrationElementOutput output) {
-        // 使用 NarrationElementOutput 的 add 方法
-        output.add(NarratedElementType.TITLE, getMessage());
+        output.add(NarratedElementType.TITLE, this.getMessage());
     }
 }

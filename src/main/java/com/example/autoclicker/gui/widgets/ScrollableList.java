@@ -1,4 +1,3 @@
-
 package com.example.autoclicker.gui.widgets;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -87,6 +86,12 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         int sliderY = getY() + (int) ((height - sliderHeight) * scrollRatio);
 
         graphics.fill(scrollBarX, sliderY, scrollBarX + scrollBarWidth, sliderY + sliderHeight, 0xFF808080);
+
+        // 添加边框
+        graphics.fill(scrollBarX, sliderY, scrollBarX + scrollBarWidth, sliderY + 1, 0xFF404040);
+        graphics.fill(scrollBarX, sliderY + sliderHeight - 1, scrollBarX + scrollBarWidth, sliderY + sliderHeight, 0xFF404040);
+        graphics.fill(scrollBarX, sliderY, scrollBarX + 1, sliderY + sliderHeight, 0xFF404040);
+        graphics.fill(scrollBarX + scrollBarWidth - 1, sliderY, scrollBarX + scrollBarWidth, sliderY + sliderHeight, 0xFF404040);
     }
 
     @Override
@@ -105,7 +110,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
             // 检查子控件是否在可视区域内
             if (childY >= getY() && childY + child.getHeight() <= getY() + height) {
                 if (child.isMouseOver(mouseX, mouseY)) {
-                    return child.mouseClicked(event, isDoubleClick); // 传递整个事件对象
+                    return child.mouseClicked(event, isDoubleClick);
                 }
             }
         }
@@ -113,14 +118,15 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         return false;
     }
 
-
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
         if (dragging) {
             double mouseY = event.y();
             double mouseDelta = mouseY - lastMouseY;
-            // 计算滚动比例：内容总高 / 可视区域高
-            scrollOffset -= (int) (mouseDelta * ((double) contentHeight / (double) height));
+
+            // 修正：鼠标往下拖（mouseDelta为正）应该让内容往上滚（scrollOffset增加）
+            scrollOffset += (int) (mouseDelta * ((double) contentHeight / (double) height));
+
             // 限制滚动范围
             scrollOffset = Math.max(0, Math.min(scrollOffset, Math.max(0, contentHeight - height)));
             lastMouseY = mouseY;
@@ -138,13 +144,12 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         return false;
     }
 
-
-
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (isMouseOver(mouseX, mouseY)) {
+            // 修正：鼠标滚轮向上（scrollY为负）应该让内容往上滚（scrollOffset增加）
             scrollOffset -= (int) (scrollY * 20);
-            scrollOffset = Math.max(0, Math.min(scrollOffset, contentHeight - height));
+            scrollOffset = Math.max(0, Math.min(scrollOffset, Math.max(0, contentHeight - height)));
             return true;
         }
         return false;

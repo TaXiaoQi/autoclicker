@@ -1,77 +1,67 @@
 package com.example.autoclicker.gui.widgets;
 
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
 
-// 滑块控件
 public class SliderWidget extends AbstractSliderButton {
-    private final Consumer<Double> onChange;
-    public final double minValue;  // 改为 protected
-    public final double maxValue;  // 改为 protected
+    private final double minValue;
+    private final double maxValue;
     private final Component prefix;
-    private int displayValue;
+    private final Consumer<Double> onChange;
 
     public SliderWidget(int x, int y, int width, int height, Component prefix,
                         double minValue, double maxValue, double defaultValue,
                         Consumer<Double> onChange) {
         super(x, y, width, height, Component.empty(),
-                (defaultValue - minValue) / (maxValue - minValue));
-        this.onChange = onChange;
+                clamp01((defaultValue - minValue) / (maxValue - minValue)));
+        this.prefix = prefix;
         this.minValue = minValue;
         this.maxValue = maxValue;
-        this.prefix = prefix;
-        this.displayValue = (int) Math.round(getValue());
+        this.onChange = onChange;
+        updateMessage(); // 初始化显示
+    }
+
+    // 工具方法：确保归一化值在 [0,1]
+    private static double clamp01(double v) {
+        return Math.max(0.0, Math.min(1.0, v));
+    }
+
+    // 获取实际值（非归一化）
+    public double getActualValue() {
+        return minValue + (maxValue - minValue) * this.value;
+    }
+
+    // 设置实际值（外部 API）
+    public void setActualValue(double value) {
+        value = Math.max(minValue, Math.min(maxValue, value));
+        this.value = clamp01((value - minValue) / (maxValue - minValue));
         updateMessage();
+        if (onChange != null) {
+            onChange.accept(value);
+        }
+    }
+
+    public int getIntValue() {
+        return (int) Math.round(getActualValue());
+    }
+
+    public void setIntValue(int value) {
+        setActualValue(value);
     }
 
     @Override
     protected void updateMessage() {
-        setMessage(Component.literal(prefix.getString() + ": " + displayValue));
+        int display = (int) Math.round(getActualValue());
+        setMessage(Component.literal(prefix.getString() + ": " + display));
     }
 
     @Override
     protected void applyValue() {
-        displayValue = (int) Math.round(getValue());
-        updateMessage();
         if (onChange != null) {
-            onChange.accept(getValue());
-        }
-    }
-    public void setIntValue(int value) {
-        // 确保值在范围内
-        value = Math.max((int)minValue, Math.min(value, (int)maxValue));
-
-        // 设置内部值（直接计算并赋值）
-        this.value = (value - minValue) / (maxValue - minValue);
-        this.displayValue = value;
-
-        // 更新显示文本
-        updateMessage();
-
-        // 触发回调（如果存在）
-        if (onChange != null) {
-            onChange.accept((double) value);
+            onChange.accept(getActualValue());
         }
     }
 
-    public double getValue() {
-        return minValue + (maxValue - minValue) * value;
-    }
-
-    public int getIntValue() {
-        return (int) Math.round(getValue());
-    }
-
-    @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        // 先调用父类方法绘制基础按钮
-        super.renderWidget(graphics, mouseX, mouseY, delta);
-
-        // 自定义滑块绘制（在现有按钮上添加指示器）
-        int sliderX = getX() + (int)(value * (width - 8));
-        graphics.fill(sliderX, getY() - 2, sliderX + 8, getY() + height + 2, 0xFFFFFFFF);
-    }
 }
