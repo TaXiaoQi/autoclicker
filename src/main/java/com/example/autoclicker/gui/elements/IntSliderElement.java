@@ -9,13 +9,11 @@ import java.util.function.Consumer;
 public class IntSliderElement implements ConfigElement<Integer> {
     private final SliderWidget slider;
     private final int defaultValue;
-    private final Consumer<Integer> onChanged;
 
     public IntSliderElement(int x, int y, int width, int height, Component label,
                             int minValue, int maxValue, int defaultValue,
                             Consumer<Integer> onChanged) {
         this.defaultValue = defaultValue;
-        this.onChanged = onChanged;
 
         this.slider = new SliderWidget(x, y, width, height, label,
                 minValue, maxValue, defaultValue, value -> {

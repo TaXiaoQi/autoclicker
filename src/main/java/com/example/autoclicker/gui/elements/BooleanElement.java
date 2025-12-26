@@ -1,15 +1,17 @@
 package com.example.autoclicker.gui.elements;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
-public class BooleanElement extends AbstractButton implements ConfigElement<Boolean> {
+public class BooleanElement extends AbstractWidget implements ConfigElement<Boolean>, GuiEventListener, NarratableEntry {
     private boolean value;
     private final boolean defaultValue;
     private final Consumer<Boolean> onChanged;
@@ -26,7 +28,7 @@ public class BooleanElement extends AbstractButton implements ConfigElement<Bool
     }
 
     @Override
-    public void onPress() {
+    public void onClick(double mouseY) {
         value = !value;
         updateText();
         if (onChanged != null) {
@@ -45,7 +47,7 @@ public class BooleanElement extends AbstractButton implements ConfigElement<Bool
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         // 自定义渲染
-        int color = isHovered ? 0xFF555555 : 0xFF333333;
+        int color = isHovered() ? 0xFF555555 : 0xFF333333;
         graphics.fill(getX(), getY(), getX() + width, getY() + height, color);
 
         int textColor = value ? 0xFF00FF00 : 0xFFFF0000;
@@ -57,7 +59,7 @@ public class BooleanElement extends AbstractButton implements ConfigElement<Bool
                 textColor
         );
 
-        if (isHovered) {
+        if (isHovered()) {
             graphics.fill(getX(), getY(), getX() + width, getY() + height, 0x20FFFFFF);
         }
     }
@@ -97,6 +99,11 @@ public class BooleanElement extends AbstractButton implements ConfigElement<Bool
 
     @Override
     protected void updateWidgetNarration(NarrationElementOutput output) {
-        // 无障碍功能
+        output.add(NarrationElementOutput.TITLE, getMessage());
+    }
+
+    @Override
+    public @NotNull NarrationPriority narrationPriority() {
+        return NarrationPriority.HOVERED;
     }
 }
