@@ -12,7 +12,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.ChatFormatting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -206,7 +205,7 @@ public class ConfigScreen extends Screen {
         int spacing = 10;           // 按钮间隔
 
         Button cancelButton = Button.builder(
-                        Component.translatable("gui.cancel").withStyle(ChatFormatting.RED),
+                        Component.translatable("gui.cancel"), // 移除了文本样式
                         btn -> onClose()
                 )
                 .pos(width / 2 - buttonWidth - spacing / 2, buttonY)
@@ -215,7 +214,7 @@ public class ConfigScreen extends Screen {
         addRenderableWidget(cancelButton);
 
         doneButton = Button.builder(
-                        Component.translatable("gui.done").withStyle(ChatFormatting.GREEN),
+                        Component.translatable("gui.done"), // 移除了文本样式
                         btn -> saveAndClose()
                 )
                 .pos(width / 2 + spacing / 2, buttonY)
@@ -235,7 +234,6 @@ public class ConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        // guiGraphics.fill(0, 0, width, height, 0x80000000);
         super.render(guiGraphics, mouseX, mouseY, delta);
     }
 
