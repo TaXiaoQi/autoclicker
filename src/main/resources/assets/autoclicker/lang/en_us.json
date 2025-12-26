@@ -1,52 +1,45 @@
 {
+  "screen.autoclicker.title": "Auto Clicker Settings",
+  "screen.autoclicker.options": "Options",
+
+  "config.section.attack": "Auto Attack Settings",
+  "config.auto_attack_enabled": "Enable Auto Attack",
+  "config.attack_interval": "Attack Interval (ticks)",
+  "config.attack_randomness_enabled": "Enable Random Attack Delay",
+  "config.attack_randomness_range": "Random Attack Delay Range (ticks)",
+
+  "config.attack_targets": "Attack Targets",
+  "config.attack_armor_stands": "Attack Armor Stands",
+  "config.attack_hostile_mobs": "Attack Hostile Mobs",
+  "config.attack_neutral_mobs": "Attack Neutral Mobs",
+
+  "config.section.place": "Auto Place Settings",
+  "config.auto_place_enabled": "Enable Auto Place",
+  "config.place_interval": "Place Interval (ticks)",
+  "config.use_bone_meal": "Use Bone Meal Automatically",
+  "config.place_randomness_enabled": "Enable Random Place Delay",
+  "config.place_randomness_range": "Random Place Delay Range (ticks)",
+
+  "config.section.anti_detection": "Anti-Detection Settings",
+  "config.humanize_clicks": "Randomly Skip Placements (Human-like Simulation)",
+
   "key.autoclicker.attack_toggle": "Toggle Auto Attack",
   "key.autoclicker.place_toggle": "Toggle Auto Place",
-  "key.autoclicker.config": "Open Config",
-  "category.autoclicker.main": "Auto Clicker",
+  "key.autoclicker.config": "Open Auto Clicker Settings",
 
-  "text.autoclicker.auto_attack": "Auto Attack",
-  "text.autoclicker.auto_place": "Auto Place",
-  "text.autoclicker.config_screen": "Auto Clicker Config",
-  "mod.name": "Auto clicker",
+  "gui.autoclicker.enabled": "Enabled",
+  "gui.autoclicker.disabled": "Disabled",
 
-  "screen.autoclicker.config.title": "Auto Clicker Configuration",
-  "screen.autoclicker.section.attack": "=== Auto Attack Settings ===",
-  "screen.autoclicker.section.place": "=== Auto Place Settings ===",
-  "screen.autoclicker.section.anti_detection": "=== Anti-Detection Settings ===",
+  "autoclicker.message.attack_toggle": "Auto Attack %s | Interval: %d–%d ticks",
+  "autoclicker.message.place_toggle": "Auto Place %s | Interval: %d–%d ticks | Bone Meal: %s",
+  "autoclicker.message.auto_disabled_timeout": "Auto %s disabled due to inactivity (>60 seconds)",
 
-  "config.autoclicker.attack_interval": "Attack Interval (ticks):",
-  "config.autoclicker.attack_randomness": "Attack Randomness (±):",
-  "config.autoclicker.enable_attack_randomness": "Enable Attack Randomness",
-  "config.autoclicker.attack_armor_stands": "Attack Armor Stands",
-  "config.autoclicker.attack_hostile_mobs": "Attack Hostile Mobs",
-  "config.autoclicker.attack_neutral_mobs": "Attack Neutral Mobs",
-  "config.autoclicker.attack_passive_mobs": "Attack Passive Mobs",
+  "autoclicker.feature.attack": "Attack",
+  "autoclicker.feature.place": "Place",
 
-  "config.autoclicker.place_interval": "Place Interval (ticks):",
-  "config.autoclicker.place_randomness": "Place Randomness (± ticks):",
-  "config.autoclicker.enable_place_randomness": "Enable Place Randomness",
-  "config.autoclicker.use_bone_meal": "Use Bone Meal Automatically",
+  "autoclicker.bonemeal.included": "Enabled",
+  "autoclicker.bonemeal.excluded": "Disabled",
 
-  "autoclicker.error.attack_interval_positive": "§cAttack interval must be greater than 0",
-  "autoclicker.error.attack_randomness_non_negative": "§cAttack randomness cannot be negative",
-  "autoclicker.error.place_interval_positive": "§cPlace interval must be greater than 0",
-  "autoclicker.error.place_randomness_non_negative": "§cPlace randomness cannot be negative",
-  "autoclicker.error.save_failed": "§cFailed to save config, check logs",
-  "autoclicker.message.config_saved": "§aConfig saved and reloaded",
-  "config.autoclicker.humanize_clicks": "Humanize Clicks (Random Skip)",
-
-  "autoclicker.message.attack_toggle": "Auto Attack: %s | Interval: %s-%sticks",
-  "autoclicker.message.place_toggle": "Auto Place: %s | Interval: %s-%sticks | %s",
-  "autoclicker.message.auto_disabled_timeout": "§c%s disabled due to inactivity",
-  "gui.autoclicker.enabled": "§aEnabled",
-  "gui.autoclicker.disabled": "§cDisabled",
-  "autoclicker.bonemeal.included": "With Bone Meal",
-  "autoclicker.bonemeal.excluded": "Without Bone Meal",
-  "autoclicker.feature.attack": "Auto Attack",
-  "autoclicker.feature.place": "Auto Place",
-
-  "mod.autoclicker.description": "A utility mod for auto-attack and auto-planting",
-
-  "gui.autoclicker.save": "Save",
-  "gui.autoclicker.cancel": "Cancel"
+  "gui.cancel": "Cancel",
+  "gui.done": "Done"
 }

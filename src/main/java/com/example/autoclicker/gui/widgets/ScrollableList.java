@@ -29,6 +29,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     private static final int CONTENT_LEFT_PADDING = 5;
     private static final int CHILD_SPACING = 4;
     private static final int SCROLL_SPEED = 20;
+    private static final int BACKGROUND_COLOR = 0x80101010; // 半透明深灰色
 
     public ScrollableList(int x, int y, int width, int height, Component title) {
         super(x, y, width, height, title);
@@ -84,39 +85,43 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         int w = width;
         int h = height;
 
-        // 1. 绘制深色半透明背景
-        graphics.fill(x, y, x + w, y + h, 0x80000000);
+        // 绘制深色半透明背景（幕布）
+        graphics.fill(x, y, x + w, y + h, BACKGROUND_COLOR);
 
-        // 2. ✅ 绘制灰色描边（边框）
+        // 绘制灰色描边（仅顶部和底部，左右顶满）
         int borderColor = 0xFF8B8B8B; // 灰色
         graphics.fill(x, y, x + w, y + 1, borderColor);         // 上边
         graphics.fill(x, y + h - 1, x + w, y + h, borderColor); // 下边
 
-        // 3. 启用剪裁：仅在可视区域内渲染内容（不含边框区域）
+        // 启用剪裁：限制内容绘制区域
         int clipTop = y + CONTENT_TOP_PADDING;
         int clipBottom = y + h - CONTENT_BOTTOM_PADDING;
         graphics.enableScissor(x, clipTop, x + w, clipBottom);
 
-        // 4. 渲染子控件（居中）
+        // 渲染子控件（居中），临时设置位置后立即恢复
         int yPos = y + CONTENT_TOP_PADDING - scrollOffset;
         int contentWidth = getContentWidth();
         int contentX = getContentX();
 
         for (AbstractWidget child : children) {
-            int childX = contentX + Math.max(0, (contentWidth - child.getWidth()) / 2);
+            int childWidth = Math.max(1, child.getWidth());
+            int childX = contentX + Math.max(0, (contentWidth - childWidth) / 2);
+
+            // 临时修改位置用于渲染
+            int oldX = child.getX();
+            int oldY = child.getY();
             child.setX(childX);
             child.setY(yPos);
-
-            if (yPos + child.getHeight() >= clipTop && yPos <= clipBottom) {
-                child.render(graphics, mouseX, mouseY, delta);
-            }
+            child.render(graphics, mouseX, mouseY, delta);
+            child.setX(oldX); // 恢复原始 x
+            child.setY(oldY); // 恢复原始 y
 
             yPos += child.getHeight() + CHILD_SPACING;
         }
 
         graphics.disableScissor();
 
-        // 5. 绘制滚动条（如果需要）
+        // 绘制滚动条（如果需要）
         if (contentHeight > getVisibleContentHeight()) {
             drawScrollBar(graphics);
         }
@@ -139,42 +144,14 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
 
         // 滑块主体
         graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + sliderHeight, 0xFF808080);
-        // 边框
+        // 边框（可选，增强视觉）
         graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + 1, 0xFF404040);
         graphics.fill(scrollBarX, sliderY + sliderHeight - 1, scrollBarRight, sliderY + sliderHeight, 0xFF404040);
         graphics.fill(scrollBarX, sliderY, scrollBarX + 1, sliderY + sliderHeight, 0xFF404040);
         graphics.fill(scrollBarRight - 1, sliderY, scrollBarRight, sliderY + sliderHeight, 0xFF404040);
     }
 
-    // ===== 鼠标事件辅助逻辑 =====
-    private void forEachVisibleChild(double mouseX, double mouseY, ChildAction action) {
-        int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
-        int contentX = getContentX();
-        int contentWidth = getContentWidth();
-        int clipTop = getY() + CONTENT_TOP_PADDING;
-        int clipBottom = getY() + height - CONTENT_BOTTOM_PADDING;
-
-        for (AbstractWidget child : children) {
-            int childWidth = child.getWidth() > 0 ? child.getWidth() : 100; // 安全默认值
-            int childX = contentX + Math.max(0, (contentWidth - childWidth) / 2);
-            int childY = currentY;
-            int childBottom = childY + child.getHeight();
-
-            boolean isVisible = (childBottom >= clipTop && childY <= clipBottom);
-            if (action.process(child, childX, childY, childWidth, isVisible, mouseX, mouseY)) {
-                return;
-            }
-
-            currentY += child.getHeight() + CHILD_SPACING;
-        }
-    }
-
-    @FunctionalInterface
-    private interface ChildAction {
-        boolean process(AbstractWidget child, int x, int y, int width, boolean isVisible, double mouseX, double mouseY);
-    }
-
-    // ===== 鼠标事件重写 =====
+    // ===== 鼠标事件处理 =====
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
@@ -187,8 +164,6 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
             int visibleHeight = getVisibleContentHeight();
             if (contentHeight > visibleHeight) {
                 dragStartScrollRatio = (float) scrollOffset / (contentHeight - visibleHeight);
-            } else {
-                dragStartScrollRatio = 0.0F;
             }
             return true;
         }
@@ -204,12 +179,34 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
             return true;
         }
 
-        forEachVisibleChild(mouseX, mouseY, (child, x, y, w, isVisible, mx, my) -> {
-            if (isVisible && mx >= x && mx < x + w && my >= y && my < y + child.getHeight()) {
-                return child.mouseClicked(event, isDoubleClick);
+        // 分发点击事件给子控件
+        int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
+        int contentX = getContentX();
+        int contentWidth = getContentWidth();
+        int clipTop = getY() + CONTENT_TOP_PADDING;
+        int clipBottom = getY() + height - CONTENT_BOTTOM_PADDING;
+
+        for (AbstractWidget child : children) {
+            int childWidth = Math.max(1, child.getWidth());
+            int childX = contentX + Math.max(0, (contentWidth - childWidth) / 2);
+            int childY = currentY;
+            int childBottom = childY + child.getHeight();
+
+            boolean isVisible = (childBottom >= clipTop && childY <= clipBottom);
+            if (isVisible && mouseX >= childX && mouseX < childX + childWidth && mouseY >= childY && mouseY < childY + child.getHeight()) {
+                // 临时设置真实位置，确保 child 内部坐标判断正确
+                int oldX = child.getX();
+                int oldY = child.getY();
+                child.setX(childX);
+                child.setY(childY);
+                boolean result = child.mouseClicked(event, isDoubleClick);
+                child.setX(oldX);
+                child.setY(oldY);
+                return result; // 返回 child 的结果，让 Minecraft 记住它用于 mouseDragged
             }
-            return false;
-        });
+
+            currentY += child.getHeight() + CHILD_SPACING;
+        }
 
         return false;
     }
@@ -231,12 +228,32 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         double mouseX = event.x();
         double mouseY = event.y();
 
-        forEachVisibleChild(mouseX, mouseY, (child, x, y, w, isVisible, mx, my) -> {
-            if (isVisible && mx >= x && mx < x + w && my >= y && my < y + child.getHeight()) {
-                return child.mouseDragged(event, deltaX, deltaY);
+        int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
+        int contentX = getContentX();
+        int contentWidth = getContentWidth();
+        int clipTop = getY() + CONTENT_TOP_PADDING;
+        int clipBottom = getY() + height - CONTENT_BOTTOM_PADDING;
+
+        for (AbstractWidget child : children) {
+            int childWidth = Math.max(1, child.getWidth());
+            int childX = contentX + Math.max(0, (contentWidth - childWidth) / 2);
+            int childY = currentY;
+            int childBottom = childY + child.getHeight();
+
+            boolean isVisible = (childBottom >= clipTop && childY <= clipBottom);
+            if (isVisible && mouseX >= childX && mouseX < childX + childWidth && mouseY >= childY && mouseY < childY + child.getHeight()) {
+                int oldX = child.getX();
+                int oldY = child.getY();
+                child.setX(childX);
+                child.setY(childY);
+                boolean result = child.mouseDragged(event, deltaX, deltaY);
+                child.setX(oldX);
+                child.setY(oldY);
+                return result;
             }
-            return false;
-        });
+
+            currentY += child.getHeight() + CHILD_SPACING;
+        }
 
         return false;
     }
@@ -251,12 +268,32 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
         double mouseX = event.x();
         double mouseY = event.y();
 
-        forEachVisibleChild(mouseX, mouseY, (child, x, y, w, isVisible, mx, my) -> {
-            if (isVisible && mx >= x && mx < x + w && my >= y && my < y + child.getHeight()) {
-                return child.mouseReleased(event);
+        int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
+        int contentX = getContentX();
+        int contentWidth = getContentWidth();
+        int clipTop = getY() + CONTENT_TOP_PADDING;
+        int clipBottom = getY() + height - CONTENT_BOTTOM_PADDING;
+
+        for (AbstractWidget child : children) {
+            int childWidth = Math.max(1, child.getWidth());
+            int childX = contentX + Math.max(0, (contentWidth - childWidth) / 2);
+            int childY = currentY;
+            int childBottom = childY + child.getHeight();
+
+            boolean isVisible = (childBottom >= clipTop && childY <= clipBottom);
+            if (isVisible && mouseX >= childX && mouseX < childX + childWidth && mouseY >= childY && mouseY < childY + child.getHeight()) {
+                int oldX = child.getX();
+                int oldY = child.getY();
+                child.setX(childX);
+                child.setY(childY);
+                boolean result = child.mouseReleased(event);
+                child.setX(oldX);
+                child.setY(oldY);
+                return result;
             }
-            return false;
-        });
+
+            currentY += child.getHeight() + CHILD_SPACING;
+        }
 
         return false;
     }
@@ -272,7 +309,6 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     }
 
     // ===== 滚动条检测 =====
-
     private boolean isPointOverScrollBarTrack(double x, double y) {
         if (contentHeight <= getVisibleContentHeight()) return false;
         return x >= getScrollBarX() && x <= getScrollBarX() + SCROLL_BAR_WIDTH
@@ -296,7 +332,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
                 && y >= sliderY && y <= sliderY + sliderHeight;
     }
 
-    // ===== Narration (可选) =====
+    // ===== Narration =====
 
     @Override
     protected void updateWidgetNarration(NarrationElementOutput output) {}

@@ -9,6 +9,7 @@ import com.example.autoclicker.gui.widgets.ScrollableList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
@@ -21,10 +22,10 @@ public class ConfigScreen extends Screen {
     private final Config config;
     private final List<ConfigElement<?>> elements = new ArrayList<>();
 
-    private Button saveButton;
+    private Button doneButton;
 
     public ConfigScreen(Screen parent) {
-        super(Component.literal("自动点击器配置"));
+        super(Component.translatable("screen.autoclicker.title"));
         this.parent = parent;
         this.config = Config.load();
     }
@@ -33,178 +34,164 @@ public class ConfigScreen extends Screen {
     protected void init() {
         super.init();
 
-        // 创建滑动列表（占据屏幕大部分区域）
-        int listHeight = height - 60; // 留出底部按钮空间
-        ScrollableList scrollList = new ScrollableList(20, 20, width - 40, listHeight,
-                Component.literal("配置选项"));
+        int margin = 20;
+        int elementWidth = Math.min(240, width - 2 * margin - 20); // 内容最大宽度
+
+        // === 1. 添加主标题（在滚动区域外，屏幕顶部居中）===
+        Component mainTitle = Component.literal("Auto Clicker").withStyle(ChatFormatting.BOLD, ChatFormatting.GOLD);
+        int titleWidth = font.width(mainTitle.getString());
+        int titleX = (width - titleWidth) / 2;
+        int titleY = 10; // 距离顶部 10px
+        addRenderableOnly(new StringWidget(titleX, titleY, titleWidth, 20, mainTitle, font));
+
+        // === 2. 滚动列表：从标题下方开始（预留 40px 高度给标题）===
+        int listTopMargin = 40; // 标题区域高度
+        int listX = margin;
+        int listY = listTopMargin;
+        int listWidth = width - 2 * margin;
+        int listHeight = height - listTopMargin - 50; // 底部留出按钮空间
+
+        ScrollableList scrollList = new ScrollableList(listX, listY, listWidth, listHeight,
+                Component.translatable("screen.autoclicker.options"));
         addRenderableWidget(scrollList);
 
-        // 清空列表
         scrollList.clearChildren();
         elements.clear();
 
-        // === 添加配置元素 ===
         int yOffset = 0;
-        int elementWidth = Math.min(240, width - 60);
 
-        // 标题
-        scrollList.addChild(new net.minecraft.client.gui.components.StringWidget(
-                0, yOffset, elementWidth, 20,
-                Component.literal("自动攻击设置").withStyle(ChatFormatting.BOLD, ChatFormatting.UNDERLINE),
-                font
-        ));
+        // === 自动攻击设置 ===
+        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.attack"));
         yOffset += 25;
 
-        // 自动攻击开关
         elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
-                Component.literal("自动攻击"),
+                Component.translatable("config.auto_attack_enabled"),
                 config.autoAttackEnabled,
                 value -> {
                     config.autoAttackEnabled = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
-        // 攻击间隔滑块
         elements.add(new IntSliderElement(0, yOffset, elementWidth, 20,
-                Component.literal("攻击间隔 (tick)"),
+                Component.translatable("config.attack_interval"),
                 1, 100, config.attackInterval,
                 value -> {
                     config.attackInterval = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
-        // 攻击随机性开关
         elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
-                Component.literal("启用攻击随机性"),
+                Component.translatable("config.attack_randomness_enabled"),
                 config.attackRandomnessEnabled,
                 value -> {
                     config.attackRandomnessEnabled = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
-        // 攻击随机范围滑块
         elements.add(new IntSliderElement(0, yOffset, elementWidth, 20,
-                Component.literal("攻击随机范围 (±)"),
+                Component.translatable("config.attack_randomness_range"),
                 0, 20, config.attackRandomness,
                 value -> {
                     config.attackRandomness = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
-        // 攻击目标类型
-        scrollList.addChild(new net.minecraft.client.gui.components.StringWidget(
-                0, yOffset, elementWidth, 20,
-                Component.literal("攻击目标:"),
-                font
-        ));
+        // === 攻击目标 ===
+        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.attack_targets"));
         yOffset += 25;
 
-        // 盔甲架开关
-        elements.add(new BooleanElement(0, yOffset, elementWidth/2-5, 20,
-                Component.literal("攻击盔甲架"),
+        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.attack_armor_stands"),
                 config.attackArmorStands,
                 value -> {
                     config.attackArmorStands = value;
-                    updateSaveButton();
-                }
-        ));
-        scrollList.addChild(elements.getLast().getWidget());
-
-        // 敌对生物开关
-        elements.add(new BooleanElement(elementWidth/2+5, yOffset, elementWidth/2-5, 20,
-                Component.literal("攻击敌对生物"),
-                config.attackHostileMobs,
-                value -> {
-                    config.attackHostileMobs = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
-        // 中立生物开关
-        elements.add(new BooleanElement(0, yOffset, elementWidth/2-5, 20,
-                Component.literal("攻击中立生物"),
+        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.attack_hostile_mobs"),
+                config.attackHostileMobs,
+                value -> {
+                    config.attackHostileMobs = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
+
+        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.attack_neutral_mobs"),
                 config.attackNeutralMobs,
                 value -> {
                     config.attackNeutralMobs = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
         // === 自动放置设置 ===
-        scrollList.addChild(new net.minecraft.client.gui.components.StringWidget(
-                0, yOffset, elementWidth, 20,
-                Component.literal("自动放置设置").withStyle(ChatFormatting.BOLD, ChatFormatting.UNDERLINE),
-                font
-        ));
+        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.place"));
         yOffset += 25;
 
-        // 自动放置开关
         elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
-                Component.literal("自动放置"),
+                Component.translatable("config.auto_place_enabled"),
                 config.autoPlaceEnabled,
                 value -> {
                     config.autoPlaceEnabled = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
-        // 放置间隔滑块
         elements.add(new IntSliderElement(0, yOffset, elementWidth, 20,
-                Component.literal("放置间隔 (tick)"),
+                Component.translatable("config.place_interval"),
                 1, 40, config.placeInterval,
                 value -> {
                     config.placeInterval = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
-        // 使用骨粉开关
         elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
-                Component.literal("自动使用骨粉"),
+                Component.translatable("config.use_bone_meal"),
                 config.useBoneMeal,
                 value -> {
                     config.useBoneMeal = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
         // === 反检测设置 ===
-        scrollList.addChild(new net.minecraft.client.gui.components.StringWidget(
-                0, yOffset, elementWidth, 20,
-                Component.literal("反检测设置").withStyle(ChatFormatting.BOLD, ChatFormatting.UNDERLINE),
-                font
-        ));
+        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.anti_detection"));
         yOffset += 25;
 
-        // 人性化点击开关
         elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
-                Component.literal("人性化点击 (随机跳过)"),
+                Component.translatable("config.humanize_clicks"),
                 config.humanizeClicks,
                 value -> {
                     config.humanizeClicks = value;
-                    updateSaveButton();
+                    updateDoneButton();
                 }
         ));
         scrollList.addChild(elements.getLast().getWidget());
@@ -212,47 +199,40 @@ public class ConfigScreen extends Screen {
         // === 底部按钮 ===
         int buttonY = height - 35;
         int buttonWidth = 100;
+        int spacing = 20;
 
-        // 保存按钮
-        saveButton = Button.builder(
-                        Component.literal("保存").withStyle(ChatFormatting.GREEN),
-                        button -> saveAndClose()
-                ).pos(width / 2 - buttonWidth - 10, buttonY)
-                .size(buttonWidth, 20)
-                .build();
-        addRenderableWidget(saveButton);
-
-        // 取消按钮
         Button cancelButton = Button.builder(
-                        Component.literal("取消").withStyle(ChatFormatting.RED),
-                        button -> onClose()
-                ).pos(20, buttonY)
+                        Component.translatable("gui.cancel").withStyle(ChatFormatting.RED),
+                        btn -> onClose()
+                )
+                .pos(width / 2 - buttonWidth - spacing / 2, buttonY)
                 .size(buttonWidth, 20)
                 .build();
         addRenderableWidget(cancelButton);
 
-        // 重置按钮
-        Button resetButton = Button.builder(
-                        Component.literal("重置").withStyle(ChatFormatting.YELLOW),
-                        button -> resetAll()
-                ).pos(width - buttonWidth - 20, buttonY)
+        doneButton = Button.builder(
+                        Component.translatable("gui.done").withStyle(ChatFormatting.GREEN),
+                        btn -> saveAndClose()
+                )
+                .pos(width / 2 + spacing / 2, buttonY)
                 .size(buttonWidth, 20)
                 .build();
-        addRenderableWidget(resetButton);
+        addRenderableWidget(doneButton);
 
-        // 初始更新保存按钮状态
-        updateSaveButton();
+        updateDoneButton();
+    }
+
+    // 辅助方法：添加居中标题
+    private void addSectionTitle(ScrollableList list, int width, int y, Component text) {
+        int textW = font.width(text.getString());
+        int x = Math.max(0, (width - textW) / 2);
+        list.addChild(new StringWidget(x, y, width, 20, text, font));
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        // 绘制半透明背景
-        graphics.fill(0, 0, width, height, 0x80000000);
-
-        // 绘制标题
-        graphics.drawCenteredString(font, title, width / 2, 5, 0xFFFFFF);
-
-        super.render(graphics, mouseX, mouseY, delta);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+        guiGraphics.fill(0, 0, width, height, 0x80000000); // 半透明背景
+        super.render(guiGraphics, mouseX, mouseY, delta);
     }
 
     @Override
@@ -260,32 +240,18 @@ public class ConfigScreen extends Screen {
         Minecraft.getInstance().setScreen(parent);
     }
 
-    private void updateSaveButton() {
-        saveButton.active = elements.stream().anyMatch(ConfigElement::isChanged);
+    private void updateDoneButton() {
+        doneButton.active = elements.stream().anyMatch(ConfigElement::isChanged);
     }
 
     private void saveAndClose() {
-        // 保存所有修改的配置
         for (ConfigElement<?> element : elements) {
             if (element.isChanged()) {
                 element.save();
             }
         }
-
-        // 保存到文件
         config.save();
-
-        // 通知主类重新加载配置
         AutoClicker.getInstance().reloadConfig();
-
-        // 关闭屏幕
         onClose();
-    }
-
-    private void resetAll() {
-        for (ConfigElement<?> element : elements) {
-            element.reset();
-        }
-        updateSaveButton();
     }
 }
