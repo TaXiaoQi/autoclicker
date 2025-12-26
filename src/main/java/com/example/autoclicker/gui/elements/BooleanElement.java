@@ -1,17 +1,18 @@
 package com.example.autoclicker.gui.elements;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
-
-public class BooleanElement extends AbstractWidget implements ConfigElement<Boolean>, GuiEventListener, NarratableEntry {
+// 布尔值元素
+public class BooleanElement extends AbstractWidget implements ConfigElement<Boolean>, GuiEventListener {
     private boolean value;
     private final boolean defaultValue;
     private final Consumer<Boolean> onChanged;
@@ -28,12 +29,17 @@ public class BooleanElement extends AbstractWidget implements ConfigElement<Bool
     }
 
     @Override
-    public void onClick(double mouseY) {
-        value = !value;
-        updateText();
-        if (onChanged != null) {
-            onChanged.accept(value);
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (this.active && this.visible && this.isMouseOver(mouseX, mouseY)) {
+            this.playDownSound(Minecraft.getInstance().getSoundManager());
+            value = !value;
+            updateText();
+            if (onChanged != null) {
+                onChanged.accept(value);
+            }
+            return true;
         }
+        return false;
     }
 
     private void updateText() {
@@ -46,21 +52,28 @@ public class BooleanElement extends AbstractWidget implements ConfigElement<Bool
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        // 自定义渲染
-        int color = isHovered() ? 0xFF555555 : 0xFF333333;
-        graphics.fill(getX(), getY(), getX() + width, getY() + height, color);
+        Minecraft minecraft = Minecraft.getInstance();
+        Font font = minecraft.font;
 
+        // 背景颜色
+        int backgroundColor = this.isHoveredOrFocused() ? 0xFF555555 : 0xFF333333;
+        graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, backgroundColor);
+
+        // 文字颜色
         int textColor = value ? 0xFF00FF00 : 0xFFFF0000;
+
+        // 绘制文字
         graphics.drawCenteredString(
                 font,
                 getMessage(),
-                getX() + width / 2,
-                getY() + (height - 8) / 2,
+                this.getX() + this.width / 2,
+                this.getY() + (this.height - 8) / 2,
                 textColor
         );
 
-        if (isHovered()) {
-            graphics.fill(getX(), getY(), getX() + width, getY() + height, 0x20FFFFFF);
+        // 悬停效果
+        if (this.isHoveredOrFocused()) {
+            graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x20FFFFFF);
         }
     }
 
@@ -99,11 +112,7 @@ public class BooleanElement extends AbstractWidget implements ConfigElement<Bool
 
     @Override
     protected void updateWidgetNarration(NarrationElementOutput output) {
-        output.add(NarrationElementOutput.TITLE, getMessage());
-    }
-
-    @Override
-    public @NotNull NarrationPriority narrationPriority() {
-        return NarrationPriority.HOVERED;
+        // 使用 NarrationElementOutput 的 add 方法
+        output.add(NarratedElementType.TITLE, getMessage());
     }
 }

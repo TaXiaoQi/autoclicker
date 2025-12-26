@@ -1,10 +1,9 @@
 package com.example.autoclicker.gui.utils;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
+// 绘图工具类
 public class DrawingUtils {
     private static final Minecraft MC = Minecraft.getInstance();
 
@@ -28,19 +27,13 @@ public class DrawingUtils {
         graphics.fill(handleX, y - 2, handleX + 8, y + height + 2, handleColor);
     }
 
-    // 启用剪裁区域
-    public static void enableScissor(int x, int y, int width, int height) {
-        double scale = MC.getWindow().getGuiScale();
-        RenderSystem.enableScissor(
-                (int)(x * scale),
-                (int)(MC.getWindow().getHeight() - (y + height) * scale),
-                (int)(width * scale),
-                (int)(height * scale)
-        );
+    // 启用剪裁区域 - 使用 GuiGraphics 的方法
+    public static void enableScissor(GuiGraphics graphics, int x, int y, int width, int height) {
+        graphics.enableScissor(x, y, x + width, y + height);
     }
 
-    // 禁用剪裁
-    public static void disableScissor() {
-        RenderSystem.disableScissor();
+    // 禁用剪裁 - 使用 GuiGraphics 的方法
+    public static void disableScissor(GuiGraphics graphics) {
+        graphics.disableScissor();
     }
 }

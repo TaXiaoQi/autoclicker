@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
 
+// 滑块控件
 public class SliderWidget extends AbstractSliderButton {
     private final Consumer<Double> onChange;
     public final double minValue;  // 改为 protected

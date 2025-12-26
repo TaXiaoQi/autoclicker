@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
 
+// 整数滑块元素
 public class IntSliderElement implements ConfigElement<Integer> {
     private final SliderWidget slider;
     private final int defaultValue;

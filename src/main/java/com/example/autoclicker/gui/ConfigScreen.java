@@ -264,8 +264,7 @@ public class ConfigScreen extends Screen {
     }
 
     private void updateSaveButton() {
-        boolean hasChanges = elements.stream().anyMatch(ConfigElement::isChanged);
-        saveButton.active = hasChanges;
+        saveButton.active = elements.stream().anyMatch(ConfigElement::isChanged);
     }
 
     private void saveAndClose() {
