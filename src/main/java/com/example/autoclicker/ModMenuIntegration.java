@@ -1,5 +1,6 @@
 package com.example.autoclicker;
 
+import com.example.autoclicker.gui.ConfigScreen;
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 
