@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 
@@ -32,15 +33,17 @@ public class BooleanElement extends AbstractWidget implements ConfigElement<Bool
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.active && this.visible && this.isMouseOver(mouseX, mouseY)) {
-            this.playDownSound(Minecraft.getInstance().getSoundManager());
-            value = !value;
-            updateText();
-            if (onChanged != null) {
-                onChanged.accept(value);
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
+        if (this.active && this.visible && this.isMouseOver(event.x(), event.y())) {
+            if (event.buttonInfo().button() == 0) { // 左键
+                this.playDownSound(Minecraft.getInstance().getSoundManager());
+                this.value = !this.value;
+                this.updateText();
+                if (this.onChanged != null) {
+                    this.onChanged.accept(this.value);
+                }
+                return true;
             }
-            return true;
         }
         return false;
     }
