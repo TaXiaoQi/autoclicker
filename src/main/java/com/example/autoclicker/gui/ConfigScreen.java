@@ -19,12 +19,9 @@ import java.util.List;
 public class ConfigScreen extends Screen {
     private final Screen parent;
     private final Config config;
-    private ScrollableList scrollList;
     private final List<ConfigElement<?>> elements = new ArrayList<>();
 
     private Button saveButton;
-    private Button cancelButton;
-    private Button resetButton;
 
     public ConfigScreen(Screen parent) {
         super(Component.literal("自动点击器配置"));
@@ -38,7 +35,7 @@ public class ConfigScreen extends Screen {
 
         // 创建滑动列表（占据屏幕大部分区域）
         int listHeight = height - 60; // 留出底部按钮空间
-        scrollList = new ScrollableList(20, 20, width - 40, listHeight,
+        ScrollableList scrollList = new ScrollableList(20, 20, width - 40, listHeight,
                 Component.literal("配置选项"));
         addRenderableWidget(scrollList);
 
@@ -226,7 +223,7 @@ public class ConfigScreen extends Screen {
         addRenderableWidget(saveButton);
 
         // 取消按钮
-        cancelButton = Button.builder(
+        Button cancelButton = Button.builder(
                         Component.literal("取消").withStyle(ChatFormatting.RED),
                         button -> onClose()
                 ).pos(20, buttonY)
@@ -235,7 +232,7 @@ public class ConfigScreen extends Screen {
         addRenderableWidget(cancelButton);
 
         // 重置按钮
-        resetButton = Button.builder(
+        Button resetButton = Button.builder(
                         Component.literal("重置").withStyle(ChatFormatting.YELLOW),
                         button -> resetAll()
                 ).pos(width - buttonWidth - 20, buttonY)

@@ -1,7 +1,6 @@
 
 package com.example.autoclicker.gui.widgets;
 
-import com.example.autoclicker.gui.utils.DrawingUtils;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -50,11 +49,11 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        graphics.pose().pushPose();
+        // 绘制背景
         graphics.fill(getX(), getY(), getX() + width, getY() + height, 0x40000000);
 
-        // 修改这里：传递 graphics 参数
-        DrawingUtils.enableScissor(graphics, getX(), getY(), width, height);
+        // 启用剪裁区域
+        graphics.enableScissor(getX(), getY(), getX() + width, getY() + height);
 
         int yPos = getY() - scrollOffset;
         for (AbstractWidget child : children) {
@@ -68,9 +67,8 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
             yPos += child.getHeight() + childSpacing;
         }
 
-        // 修改这里：传递 graphics 参数
-        DrawingUtils.disableScissor(graphics);
-        graphics.pose().popPose();
+        // 禁用剪裁
+        graphics.disableScissor();
 
         if (contentHeight > height) {
             drawScrollBar(graphics);

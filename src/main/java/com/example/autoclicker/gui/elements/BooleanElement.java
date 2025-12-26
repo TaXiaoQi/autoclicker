@@ -11,16 +11,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 
 import java.util.function.Consumer;
+
 // 布尔值元素
 public class BooleanElement extends AbstractWidget implements ConfigElement<Boolean>, GuiEventListener {
     private boolean value;
     private final boolean defaultValue;
     private final Consumer<Boolean> onChanged;
+    private final Font font;
     private final Component label;
 
     public BooleanElement(int x, int y, int width, int height, Component label,
                           boolean defaultValue, Consumer<Boolean> onChanged) {
         super(x, y, width, height, label);
+        this.font = Minecraft.getInstance().font;
         this.value = defaultValue;
         this.defaultValue = defaultValue;
         this.onChanged = onChanged;
@@ -52,9 +55,6 @@ public class BooleanElement extends AbstractWidget implements ConfigElement<Bool
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        Minecraft minecraft = Minecraft.getInstance();
-        Font font = minecraft.font;
-
         // 背景颜色
         int backgroundColor = this.isHoveredOrFocused() ? 0xFF555555 : 0xFF333333;
         graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, backgroundColor);
