@@ -19,7 +19,6 @@ public class Config {
     public boolean attackArmorStands = true;       // 攻击盔甲架
     public boolean attackHostileMobs = true;       // 攻击敌对生物（怪物）
     public boolean attackNeutralMobs = false;      // 攻击中立生物（当前实际作用于被动生物）
-    public boolean attackPassiveMobs = false;      // 攻击被动生物（预留，当前未使用）
 
     // === 自动放置配置 ===
     public boolean autoPlaceEnabled = false;
