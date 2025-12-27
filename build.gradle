@@ -67,12 +67,11 @@ subprojects {
         options.release = 21
     }
 
-    // ✅ 修正：使用预先定义的变量
     processResources {
         filesMatching("fabric.mod.json") {
             expand([
-                    "version": fullVersion,           // 使用预先定义的变量
-                    "minecraft_version": mcVersion,   // 局部变量没问题
+                    "version": fullVersion,
+                    "minecraft_version": mcVersion,
                     "java_version": 21
             ])
         }
