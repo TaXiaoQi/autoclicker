@@ -45,6 +45,8 @@ public class BooleanElement extends AbstractButton implements ConfigElement<Bool
         setMessage(originalLabel.copy().append(": ").append(status));
     }
 
+
+
     // ========== ConfigElement ==========
 
     @Override

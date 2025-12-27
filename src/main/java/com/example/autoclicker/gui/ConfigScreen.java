@@ -2,7 +2,6 @@ package com.example.autoclicker.gui;
 
 import com.example.autoclicker.AutoClicker;
 import com.example.autoclicker.Config;
-import com.example.autoclicker.gui.elements.BooleanElement;
 import com.example.autoclicker.gui.elements.ConfigElement;
 import com.example.autoclicker.gui.elements.IntSliderElement;
 import com.example.autoclicker.gui.widgets.ScrollableList;
@@ -34,16 +33,16 @@ public class ConfigScreen extends Screen {
         super.init();
 
         int margin = 20;
-        int elementWidth = Math.min(240, width - 2 * margin - 20); // 内容最大宽度
+        int elementWidth = Math.min(240, width - 2 * margin - 20);
 
-        // === 1. 添加主标题（在滚动区域外，屏幕顶部居中）===
+        // === 主标题 ===
         Component mainTitle = Component.literal("Auto Clicker");
         int titleWidth = font.width(mainTitle.getString());
         int titleX = (width - titleWidth) / 2;
-        int titleY = 10; // 距离顶部 10px
+        int titleY = 10;
         addRenderableOnly(new StringWidget(titleX, titleY, titleWidth, 20, mainTitle, font));
 
-        // === 2. 滚动列表： ===
+        // === 滚动列表 ===
         int listTopMargin = 30;
         int buttonHeight = 40;
         int listX = 0;
@@ -67,7 +66,8 @@ public class ConfigScreen extends Screen {
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.attack"));
         yOffset += 25;
 
-        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+        // ✅ 使用工厂方法创建 BooleanElement
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.auto_attack_enabled"),
                 config.autoAttackEnabled,
                 value -> {
@@ -89,7 +89,8 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
-        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+        // ✅ 使用工厂方法
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.attack_randomness_enabled"),
                 config.attackRandomnessEnabled,
                 value -> {
@@ -115,7 +116,8 @@ public class ConfigScreen extends Screen {
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.attack_targets"));
         yOffset += 25;
 
-        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+        // ✅ 使用工厂方法
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.attack_armor_stands"),
                 config.attackArmorStands,
                 value -> {
@@ -126,7 +128,8 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
-        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+        // ✅ 使用工厂方法
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.attack_hostile_mobs"),
                 config.attackHostileMobs,
                 value -> {
@@ -137,7 +140,8 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
-        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+        // ✅ 使用工厂方法
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.attack_neutral_mobs"),
                 config.attackNeutralMobs,
                 value -> {
@@ -152,7 +156,8 @@ public class ConfigScreen extends Screen {
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.place"));
         yOffset += 25;
 
-        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+        // ✅ 使用工厂方法
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.auto_place_enabled"),
                 config.autoPlaceEnabled,
                 value -> {
@@ -174,7 +179,8 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
-        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+        // ✅ 使用工厂方法
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.use_bone_meal"),
                 config.useBoneMeal,
                 value -> {
@@ -189,7 +195,8 @@ public class ConfigScreen extends Screen {
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.anti_detection"));
         yOffset += 25;
 
-        elements.add(new BooleanElement(0, yOffset, elementWidth, 20,
+        // ✅ 使用工厂方法
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.humanize_clicks"),
                 config.humanizeClicks,
                 value -> {
@@ -200,12 +207,12 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
 
         // === 底部按钮 ===
-        int buttonY = height - 30;  // 距离底部的位置
-        int buttonWidth = 150;      // 按钮的宽度
-        int spacing = 10;           // 按钮间隔
+        int buttonY = height - 30;
+        int buttonWidth = 150;
+        int spacing = 10;
 
         Button cancelButton = Button.builder(
-                        Component.translatable("gui.cancel"), // 移除了文本样式
+                        Component.translatable("gui.cancel"),
                         btn -> onClose()
                 )
                 .pos(width / 2 - buttonWidth - spacing / 2, buttonY)
@@ -214,7 +221,7 @@ public class ConfigScreen extends Screen {
         addRenderableWidget(cancelButton);
 
         doneButton = Button.builder(
-                        Component.translatable("gui.done"), // 移除了文本样式
+                        Component.translatable("gui.done"),
                         btn -> saveAndClose()
                 )
                 .pos(width / 2 + spacing / 2, buttonY)

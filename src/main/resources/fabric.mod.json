@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "autoclicker",
-  "version": "1.3.0",
+  "version": "${version}",
+
   "name": "Autoclicker",
   "description": "Auto-attack and auto-plant mod",
   "icon": "assets/autoclicker/icon.png",
@@ -24,10 +25,10 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=0.17.0",
+    "fabricloader": ">=0.14.0",
     "fabric-api": "*",
-    "minecraft": "~1.21.10",
-    "java": ">=21"
+    "minecraft": "${minecraft_version}",
+    "java": ">=${java_version}"
   },
   "suggests": {
     "modmenu": "*"
