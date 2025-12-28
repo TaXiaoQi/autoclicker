@@ -7,10 +7,11 @@ import java.util.function.Consumer;
 
 public class GuiFactory {
 
+    @SuppressWarnings("unchecked")
     public static ConfigElement<Boolean> createBooleanElement(
-            int x, int y, int width, int height, Component label,
-            boolean defaultValue, Consumer<Boolean> onChanged) {
-
+            int x, int y, int width, int height,
+            Component label, boolean defaultValue,
+            Consumer<Boolean> onChanged) {
         try {
             // 首先尝试1.21.11版本
             Class<?> clazz1211 = Class.forName("com.example.autoclicker.gui.elements.v1211.BooleanElement");

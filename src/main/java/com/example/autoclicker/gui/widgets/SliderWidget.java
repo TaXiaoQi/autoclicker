@@ -9,9 +9,9 @@ import java.util.function.Consumer;
 public class SliderWidget extends AbstractSliderButton {
     private final double minValue;
     private final double maxValue;
-    private final Component prefix; // e.g. Component.translatable("config.attack_interval")
+    private final Component prefix;
     private final Consumer<Double> onChange;
-    private final boolean initialized; // 用于避免初始化时触发 onChange
+    private final boolean initialized;
 
     public SliderWidget(int x, int y, int width, int height, Component prefix,
                         double minValue, double maxValue, double defaultValue,

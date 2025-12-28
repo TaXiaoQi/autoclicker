@@ -77,15 +77,15 @@ subprojects {
         }
     }
 
-    tasks.named('jar') {
-        archiveClassifier = 'dev'
+    tasks.named('remapJar') {
+        archiveBaseName = "Autoclicker"
+        archiveVersion = "${project.version}+${mcVersion}"
     }
 
     tasks.register('copyBuild', Copy) {
         dependsOn tasks.named('remapJar')
         from(tasks.named('remapJar').map { it.archiveFile })
         into(layout.projectDirectory.dir("$rootDir/dist"))
-        rename { "autoclicker-${mcVersion}.jar" }
     }
 
     tasks.named('build') {
