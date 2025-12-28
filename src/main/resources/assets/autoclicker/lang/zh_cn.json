@@ -1,4 +1,11 @@
 {
+  "key.category.autoclicker": "自动点击器",
+
+  "key.autoclicker.mute": "切换静音",
+  "key.autoclicker.toggle_attack": "切换自动攻击",
+  "key.autoclicker.toggle_place": "切换自动放置",
+  "key.autoclicker.open_gui": "打开配置界面",
+
   "mod.autoclicker.name": "自动点击器",
   "modmenu.descriptionTranslation.autoclicker": "实现 自动攻击 | 自动种植 的模组",
   "screen.autoclicker.title": "自动点击器设置",
@@ -24,10 +31,6 @@
 
   "config.section.anti_detection": "反检测设置",
   "config.humanize_clicks": "随机漏放置（模拟真人）",
-
-  "key.autoclicker.attack_toggle": "切换自动攻击",
-  "key.autoclicker.place_toggle": "切换自动放置",
-  "key.autoclicker.config": "打开自动点击器设置",
 
   "gui.autoclicker.enabled": "已启用",
   "gui.autoclicker.disabled": "已禁用",

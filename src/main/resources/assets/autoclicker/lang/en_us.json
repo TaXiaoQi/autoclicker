@@ -1,4 +1,11 @@
 {
+  "key.category.autoclicker": "Auto Clicker",
+
+  "key.autoclicker.mute": "Toggle Mute",
+  "key.autoclicker.toggle_attack": "Toggle Auto Attack",
+  "key.autoclicker.toggle_place": "Toggle Auto Place",
+  "key.autoclicker.open_gui": "Open Config GUI",
+
   "mod.autoclicker.name": "Autoclicker",
   "modmenu.descriptionTranslation.autoclicker": "A mod for auto-attacking and auto-planting.",
   "screen.autoclicker.title": "Auto Clicker Settings",
@@ -24,10 +31,6 @@
 
   "config.section.anti_detection": "Anti-Detection Settings",
   "config.humanize_clicks": "Randomly Skip Placements (Human-like Simulation)",
-
-  "key.autoclicker.attack_toggle": "Toggle Auto Attack",
-  "key.autoclicker.place_toggle": "Toggle Auto Place",
-  "key.autoclicker.config": "Open Auto Clicker Settings",
 
   "gui.autoclicker.enabled": "Enabled",
   "gui.autoclicker.disabled": "Disabled",

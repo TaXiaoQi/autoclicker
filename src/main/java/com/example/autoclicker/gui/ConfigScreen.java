@@ -1,7 +1,7 @@
 package com.example.autoclicker.gui;
 
-import com.example.autoclicker.AutoClicker;
-import com.example.autoclicker.Config;
+import com.example.autoclicker.config.ConfigManager;
+import com.example.autoclicker.config.Config;
 import com.example.autoclicker.gui.elements.ConfigElement;
 import com.example.autoclicker.gui.elements.IntSliderElement;
 import com.example.autoclicker.gui.widgets.ScrollableList;
@@ -25,7 +25,7 @@ public class ConfigScreen extends Screen {
     public ConfigScreen(Screen parent) {
         super(Component.translatable("screen.autoclicker.title"));
         this.parent = parent;
-        this.config = Config.load();
+        this.config = ConfigManager.getConfig();
     }
 
     @Override
@@ -259,8 +259,7 @@ public class ConfigScreen extends Screen {
                 element.save();
             }
         }
-        config.save();
-        AutoClicker.getInstance().reloadConfig();
+        ConfigManager.save();
         onClose();
     }
 }
