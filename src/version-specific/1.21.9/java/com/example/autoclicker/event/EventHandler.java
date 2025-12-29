@@ -9,10 +9,8 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -83,12 +81,6 @@ public class EventHandler {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             boolean windowActive = client.isWindowActive();
             audioMute.updateMinimizedMute(!windowActive);
-        });
-
-        ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            if (screen instanceof PauseScreen) {
-                handlePauseMenu();
-            }
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> handleGameExit());
@@ -204,12 +196,6 @@ public class EventHandler {
         Minecraft client = Minecraft.getInstance();
         if (client.screen == null) {
             client.setScreen(new ConfigScreen(null));
-        }
-    }
-
-    private static void handlePauseMenu() {
-        if (!audioMute.isManuallyMuted()) {
-            audioMute.forceRestore();
         }
     }
 

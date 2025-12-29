@@ -106,3 +106,6 @@
 ## 📜 许可证
 
 本项目仅供学习与个人使用，请遵守服务器规则，切勿在禁止外挂的服务器上使用。
+
+## License
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
