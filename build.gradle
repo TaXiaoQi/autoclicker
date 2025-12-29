@@ -21,16 +21,18 @@ def fabricApiVersions = [
 
 // 版本分组映射
 def getVersionGroup = { mcVersion ->
-    if (mcVersion == "1.21.11") {
-        return "1.21.11"
-    } else if (mcVersion == "1.21.9") {
-        return "1.21.9"
-    } else if (mcVersion == "1.21.10") {
-        return "1.21.10"
-    } else if (mcVersion.startsWith("1.21.1")) {
-        return "1.21.1-1.21.8"
+    switch (mcVersion) {
+        case "1.21.11":
+            return "1.21.11"
+        case "1.21.10":
+            return "1.21.10"
+        case "1.21.9":
+            return "1.21.9"
+        case ~/1\.21\.[1-8]/:
+            return "1.21.1-1.21.8"
+        default:
+            throw new GradleException("Unknown version: ${mcVersion}")
     }
-    return mcVersion
 }
 
 subprojects {

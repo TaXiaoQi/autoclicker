@@ -1,4 +1,3 @@
-// file: src/version-specific/1.21.1-1.21.8/java/com/example/autoclicker/gui/widgets/ScrollableList.java
 package com.example.autoclicker.gui.widgets;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -19,16 +18,15 @@ public class ScrollableList extends AbstractWidget
     private int scrollOffset = 0;
     private int contentHeight = 0;
     private boolean draggingScrollBar = false;
-    private double dragStartSliderOffset = 0.0; // 鼠标相对于滑块顶部的偏移
+    private double dragStartSliderOffset = 0.0;
 
-    // 原版风格常量
     private static final int CONTENT_TOP_PADDING = 4;
     private static final int CONTENT_BOTTOM_PADDING = 4;
     private static final int SCROLL_BAR_WIDTH = 6;
     private static final int CHILD_SPACING = 4;
     private static final int SCROLL_SPEED = 20;
-    private static final int BACKGROUND_COLOR = 0x80101010; // 半透明深灰色
-    private static final int SCROLL_BAR_RIGHT_PADDING = 55;   // 滚动条右侧留白
+    private static final int BACKGROUND_COLOR = 0x80101010;
+    private static final int SCROLL_BAR_RIGHT_PADDING = 55;
 
     public ScrollableList(int x, int y, int width, int height, Component title) {
         super(x, y, width, height, title);
@@ -95,23 +93,16 @@ public class ScrollableList extends AbstractWidget
         int w = width;
         int h = height;
 
-        // 背景
         graphics.fill(x, y, x + w, y + h, BACKGROUND_COLOR);
+        graphics.fill(x, y, x + w, y + 1, 0x60FFFFFF);
+        graphics.fill(x, y + 1, x + w, y + 2, 0x80000000);
+        graphics.fill(x, y + h - 2, x + w, y + h - 1, 0x80000000);
+        graphics.fill(x, y + h - 1, x + w, y + h, 0x60FFFFFF);
 
-        // 上下描边
-        graphics.fill(x, y, x + w, y + 1, 0x60FFFFFF);    // 外层：半透明白（模拟高光）
-        graphics.fill(x, y + 1, x + w, y + 2, 0x80000000); // 内层：半透明黑
-
-        // 底部
-        graphics.fill(x, y + h - 2, x + w, y + h - 1, 0x80000000); // 内层黑
-        graphics.fill(x, y + h - 1, x + w, y + h, 0x60FFFFFF);     // 外层白
-
-        // 剪裁内容区
         int clipTop = y + CONTENT_TOP_PADDING;
         int clipBottom = y + h - CONTENT_BOTTOM_PADDING;
         graphics.enableScissor(x, clipTop, x + w, clipBottom);
 
-        // 渲染子控件（居中）
         int yPos = y + CONTENT_TOP_PADDING - scrollOffset;
         int contentWidth = getContentWidth();
         int contentX = getContentX();
@@ -133,7 +124,6 @@ public class ScrollableList extends AbstractWidget
 
         graphics.disableScissor();
 
-        // 绘制滚动条（如果需要）
         if (needsScrollBar()) {
             drawScrollBar(graphics);
         }
@@ -144,24 +134,18 @@ public class ScrollableList extends AbstractWidget
 
         int scrollBarX = getScrollBarX();
         int scrollBarRight = scrollBarX + SCROLL_BAR_WIDTH;
-
-        // 滚动条轨道严格对齐内容可视区
         int trackTop = getY() + CONTENT_TOP_PADDING;
         int trackBottom = getY() + height - CONTENT_BOTTOM_PADDING;
         int trackHeight = trackBottom - trackTop;
 
-        // 绘制滑槽（纯黑）
         graphics.fill(scrollBarX, trackTop, scrollBarRight, trackBottom, 0xFF000000);
 
-        // 计算滑块
         int sliderHeight = calculateSliderHeight(trackHeight);
         float scrollRatio = (float) scrollOffset / Math.max(1, contentHeight - trackHeight);
         int sliderY = trackTop + (int) ((trackHeight - sliderHeight) * scrollRatio);
 
-        // 绘制滑块
         graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + sliderHeight, 0xFFCCCCCC);
 
-        // 边框
         int edgeColor = 0xFFAAAAAA;
         graphics.fill(scrollBarX, sliderY, scrollBarRight, sliderY + 1, edgeColor);
         graphics.fill(scrollBarX, sliderY + sliderHeight - 1, scrollBarRight, sliderY + sliderHeight, edgeColor);
@@ -169,14 +153,11 @@ public class ScrollableList extends AbstractWidget
         graphics.fill(scrollBarRight - 1, sliderY, scrollBarRight, sliderY + sliderHeight, edgeColor);
     }
 
-    // ===== 鼠标事件（1.21.1–1.21.8 旧版 API）=====
-
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != 0) return false; // 只处理左键
+        if (button != 0) return false;
 
         if (needsScrollBar()) {
-            // 点击滑块：开始拖动
             if (isPointOverScrollBarHandle(mouseX, mouseY)) {
                 draggingScrollBar = true;
 
@@ -191,7 +172,6 @@ public class ScrollableList extends AbstractWidget
                 return true;
             }
 
-            // 点击轨道：跳转
             if (isPointOverScrollBarTrack(mouseX, mouseY)) {
                 int trackTop = getY() + CONTENT_TOP_PADDING;
                 int trackHeight = getVisibleContentHeight();
@@ -207,7 +187,6 @@ public class ScrollableList extends AbstractWidget
             }
         }
 
-        // 分发给子控件
         int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
         int contentX = getContentX();
         int contentWidth = getContentWidth();
@@ -257,7 +236,6 @@ public class ScrollableList extends AbstractWidget
             return true;
         }
 
-        // 分发给子控件
         int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
         int contentX = getContentX();
         int contentWidth = getContentWidth();
@@ -295,7 +273,6 @@ public class ScrollableList extends AbstractWidget
             return true;
         }
 
-        // 分发给子控件
         int currentY = getY() + CONTENT_TOP_PADDING - scrollOffset;
         int contentX = getContentX();
         int contentWidth = getContentWidth();
@@ -326,16 +303,29 @@ public class ScrollableList extends AbstractWidget
         return false;
     }
 
-    // 🔧 修复这里！1.21.1-1.21.8 版本有 4 个参数
+    // 🔧 1.21.1 版本的正确实现：4个参数的 mouseScrolled
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amount, double otherAmount) {
-        // 注意：4个参数！
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        // 在 1.21.1 中，这个方法有4个参数：
+        // mouseX, mouseY, horizontalAmount, verticalAmount
+        // 我们主要关心垂直滚动 (verticalAmount)
+
         if (this.isMouseOver(mouseX, mouseY) && needsScrollBar()) {
-            this.scrollOffset -= (int) (amount * SCROLL_SPEED);
+            // verticalAmount 的值：
+            // -1.0 表示向上滚动滚轮（内容向下移动）
+            //  1.0 表示向下滚动滚轮（内容向上移动）
+            this.scrollOffset -= (int) (verticalAmount * SCROLL_SPEED);
             clampScrollOffset();
             return true;
         }
         return false;
+    }
+
+    // 确保鼠标悬停检测正确
+    @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        return mouseX >= this.getX() && mouseX < this.getX() + this.width &&
+                mouseY >= this.getY() && mouseY < this.getY() + this.height;
     }
 
     // ===== 滚动条检测 =====

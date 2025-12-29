@@ -20,6 +20,7 @@ public class ConfigScreen extends Screen {
     private final Screen parent;
     private final Config config;
     private final List<ConfigElement<?>> elements = new ArrayList<>();
+    private ScrollableList scrollList;
 
     private Button doneButton;
 
@@ -27,6 +28,17 @@ public class ConfigScreen extends Screen {
         super(Component.translatable("screen.autoclicker.title"));
         this.parent = parent;
         this.config = ConfigManager.getConfig();
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount, double otherAmount) {
+        if (this.scrollList != null) {
+            // 让滚动列表优先处理滚轮事件
+            if (this.scrollList.isMouseOver(mouseX, mouseY) && this.scrollList.mouseScrolled(mouseX, mouseY, amount, otherAmount)) {
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, amount, otherAmount);
     }
 
     @Override
@@ -49,14 +61,14 @@ public class ConfigScreen extends Screen {
         int listX = 0;
         int listWidth = width;
         int listHeight = height - listTopMargin - buttonHeight;
-        ScrollableList scrollList = new ScrollableList(
+        this.scrollList = new ScrollableList(
                 listX,
                 listTopMargin,
                 listWidth,
                 listHeight,
                 Component.translatable("screen.autoclicker.options")
         );
-        addRenderableWidget(scrollList);
+        addRenderableWidget(this.scrollList);
 
         scrollList.clearChildren();
         elements.clear();
