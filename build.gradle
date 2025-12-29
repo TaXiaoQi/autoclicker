@@ -2,23 +2,49 @@ plugins {
     id 'fabric-loom' version '1.14-SNAPSHOT' apply false
 }
 
-// ✅ 定义每个 MC 版本对应的Fabric api
-def fabricApiVersions = [
-        "1.21.1": "0.116.7+1.21.1",
-        "1.21.2": "0.106.1+1.21.2",
-        "1.21.3": "0.114.1+1.21.3",
-        "1.21.4": "0.119.4+1.21.4",
-        "1.21.5": "0.128.2+1.21.5",
-        "1.21.6": "0.128.2+1.21.6",
-        "1.21.7": "0.129.0+1.21.7",
-        "1.21.8": "0.136.1+1.21.8",
-        "1.21.9": "0.134.1+1.21.9",
-        "1.21.10": "0.138.4+1.21.10",
-        "1.21.11": "0.140.2+1.21.11"
-]
+// ========== 配置常量（易于修改） ==========
+ext {
+    // 模组基本信息（只需在这里修改）
+    MOD_VERSION = "1.4.0"
+    MOD_GROUP = "com.example.autoclicker"
 
-def modMenuVersions = "7.2.2"
+    // 加载器版本
+    LOADER_VERSION = "0.18.0"
 
+    // ModMenu 版本
+    MODMENU_VERSION = "7.2.2"
+
+    // Fabric API 版本映射
+    FABRIC_API_VERSIONS = [
+            "1.21": "0.102.0+1.21",
+            "1.21.1": "0.116.7+1.21.1",
+            "1.21.2": "0.106.1+1.21.2",
+            "1.21.3": "0.114.1+1.21.3",
+            "1.21.4": "0.119.4+1.21.4",
+            "1.21.5": "0.128.2+1.21.5",
+            "1.21.6": "0.128.2+1.21.6",
+            "1.21.7": "0.129.0+1.21.7",
+            "1.21.8": "0.136.1+1.21.8",
+            "1.21.9": "0.134.1+1.21.9",
+            "1.21.10": "0.138.4+1.21.10",
+            "1.21.11": "0.140.2+1.21.11"
+    ]
+
+    // 版本分组
+    getVersionGroup = { version ->
+        if (version.startsWith("1.21.11")) {
+            return "1.21.11"
+        } else if (version.startsWith("1.21.9") || version.startsWith("1.21.10")) {
+            return "1.21.9-1.21.10"
+        } else if (version.startsWith("1.21.")) {
+            return "1.21.1-1.21.8"
+        } else {
+            return version
+        }
+    }
+}
+
+// ========== 子项目配置 ==========
 subprojects {
     apply plugin: 'java'
     apply plugin: 'fabric-loom'
@@ -26,15 +52,14 @@ subprojects {
 
     def mcVersion = project.name
 
-    if (!fabricApiVersions.containsKey(mcVersion)) {
-        throw new GradleException("Unsupported Minecraft version: ${mcVersion}. Add it to fabricApiVersions.")
+    // 检查版本支持
+    if (!rootProject.ext.FABRIC_API_VERSIONS.containsKey(mcVersion)) {
+        throw new GradleException("不支持的 Minecraft 版本: ${mcVersion}")
     }
 
-    version = "1.4.0"  // 模组版本
-    group = "com.example.autoclicker"
-
-    // ✅ 预先定义用于资源处理的变量
-    def fullVersion = "${version}+${mcVersion}"
+    // 使用 ext 中的配置
+    version = "${rootProject.ext.MOD_VERSION}+${mcVersion}"
+    group = rootProject.ext.MOD_GROUP
 
     repositories {
         maven { url "https://maven.fabricmc.net/" }
@@ -45,20 +70,21 @@ subprojects {
     dependencies {
         minecraft "com.mojang:minecraft:${mcVersion}"
         mappings loom.layered() { officialMojangMappings() }
-        modImplementation "net.fabricmc:fabric-loader:0.18.0"
-        modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersions[mcVersion]}"
-        modImplementation "com.terraformersmc:modmenu:7.2.2"
-        // modImplementation "com.terraformersmc:modmenu:${modMenuVersions[mcVersion]}"
+        modImplementation "net.fabricmc:fabric-loader:${rootProject.ext.LOADER_VERSION}"
+        modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.ext.FABRIC_API_VERSIONS[mcVersion]}"
+        modImplementation "com.terraformersmc:modmenu:${rootProject.ext.MODMENU_VERSION}"
     }
 
-    // ✅ 正确的 sourceSets 配置
+    // 使用版本组
+    def versionGroup = rootProject.ext.getVersionGroup(mcVersion)
+
     sourceSets.main {
         java.srcDirs = [
-                file("$rootDir/src/version-specific/${mcVersion}/java"),
+                file("$rootDir/src/version-specific/${versionGroup}/java"),
                 file("$rootDir/src/main/java")
         ]
         resources.srcDirs = [
-                file("$rootDir/src/version-specific/${mcVersion}/resources"),
+                file("$rootDir/src/version-specific/${versionGroup}/resources"),
                 file("$rootDir/src/main/resources")
         ]
     }
@@ -75,38 +101,90 @@ subprojects {
     processResources {
         filesMatching("fabric.mod.json") {
             expand([
-                    "version": fullVersion,
+                    "version": project.version,
                     "minecraft_version": mcVersion,
                     "java_version": 21
             ])
         }
     }
 
+    // 配置输出
     tasks.named('remapJar') {
-        archiveBaseName = "Autoclicker"  // 输出的文件名称
-        archiveVersion = "${project.version}+${mcVersion}" // 带版本
+        archiveBaseName = "Autoclicker"
+        archiveVersion = project.version
     }
 
-    tasks.register('copyBuild', Copy) {
+    // 复制到 dist 目录
+    tasks.register('copyToDist', Copy) {
         dependsOn tasks.named('remapJar')
+
+        doFirst {
+            mkdir "$rootDir/dist"
+        }
+
         from(tasks.named('remapJar').map { it.archiveFile })
-        into(layout.projectDirectory.dir("$rootDir/dist"))
+        into("$rootDir/dist")
+
+        rename { fileName ->
+            "Autoclicker-${mcVersion}.jar"
+        }
     }
 
     tasks.named('build') {
-        finalizedBy tasks.named('copyBuild')
+        finalizedBy tasks.named('copyToDist')
     }
 }
 
-// 一键构建所有版本
-tasks.register('buildAllVersions') {
+// ========== 根项目任务 ==========
+// 一键构建所有版本（顺序执行，避免内存问题）
+tasks.register('buildAllSequentially') {
     group = 'build'
-    description = 'Build all supported Minecraft versions'
+    description = '顺序构建所有版本（避免内存溢出）'
+
+    // 版本构建顺序
+    def buildOrder = [
+            ':1.21.1:build',
+            ':1.21.2:build',
+            ':1.21.3:build',
+            ':1.21.4:build',
+            ':1.21.5:build',
+            ':1.21.6:build',
+            ':1.21.7:build',
+            ':1.21.8:build',
+            ':1.21.9:build',
+            ':1.21.10:build',
+            ':1.21.11:build'
+    ]
+
+    // 创建任务依赖链
+    buildOrder.eachWithIndex { taskPath, index ->
+        if (index > 0) {
+            tasks.findByPath(taskPath)?.mustRunAfter(buildOrder[index - 1])
+        }
+        dependsOn taskPath
+    }
+}
+
+// 并行构建（快速但可能内存溢出）
+tasks.register('buildAllParallel') {
+    group = 'build'
+    description = '并行构建所有版本（快速但耗内存）'
     dependsOn subprojects.collect { ":${it.name}:build" }
 }
 
+// 默认使用顺序构建
+tasks.register('buildAll') {
+    group = 'build'
+    description = '构建所有版本（默认顺序构建）'
+    dependsOn tasks.named('buildAllSequentially')
+}
+
+// 清理任务
 tasks.register('cleanAll') {
     group = 'build'
-    description = 'Clean all versions'
+    description = '清理所有版本'
     dependsOn subprojects*.tasks*.clean
+    doLast {
+        delete 'dist'
+    }
 }
