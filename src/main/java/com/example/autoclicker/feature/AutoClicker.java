@@ -137,31 +137,61 @@ public class AutoClicker {
                 return false;
             }
 
+            var level = client.level;
+            var pos = blockHit.getBlockPos();
+            var state = level.getBlockState(pos);
+            var config = ConfigManager.getConfig();
+
+            // 检查主副手物品
             ItemStack mainHandItem = client.player.getMainHandItem();
             ItemStack offHandItem = client.player.getOffhandItem();
 
-            boolean mainHandPlaceable = isPlaceableItem(mainHandItem);
-            boolean offHandPlaceable = isPlaceableItem(offHandItem);
-            boolean offHandBoneMeal = offHandItem.getItem() == Items.BONE_MEAL && ConfigManager.getConfig().useBoneMeal;
+            // ===== 1. 骨粉逻辑 =====
+            if (config.useBoneMeal) {
+                // 检查瞄准的方块是否是可催熟的植物
+                if (state.getBlock() instanceof CropBlock ||
+                        state.getBlock() instanceof SaplingBlock ||
+                        state.getBlock() instanceof StemBlock) {
 
-            // 优先使用主手放置
-            if (mainHandPlaceable) {
-                client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
-                client.player.swing(InteractionHand.MAIN_HAND);
-                return true;
-            }
-            // 如果主手没有可放置物品，但副手有可放置物品
-            else if (offHandPlaceable) {
-                client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
-                client.player.swing(InteractionHand.OFF_HAND);
-                return true;
+                    // 检查主副手是否有骨粉
+                    if (mainHandItem.getItem() == Items.BONE_MEAL) {
+                        var result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
+                        if (result.consumesAction()) {
+                            client.player.swing(InteractionHand.MAIN_HAND);
+                            return true;
+                        }
+                    } else if (offHandItem.getItem() == Items.BONE_MEAL) {
+                        var result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
+                        if (result.consumesAction()) {
+                            client.player.swing(InteractionHand.OFF_HAND);
+                            return true;
+                        }
+                    }
+                }
             }
 
-            // 副手骨粉（如果启用且副手是骨粉）
-            if (offHandBoneMeal) {
-                client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
-                client.player.swing(InteractionHand.OFF_HAND);
-                return true;
+            // ===== 2. 种植逻辑 =====
+            // 检查手持物品是否为种子/可种植物品
+            ItemStack seedItem = ItemStack.EMPTY;
+            InteractionHand hand = null;
+
+            if (isPlantableItem(mainHandItem)) {
+                seedItem = mainHandItem;
+                hand = InteractionHand.MAIN_HAND;
+            } else if (isPlantableItem(offHandItem)) {
+                seedItem = offHandItem;
+                hand = InteractionHand.OFF_HAND;
+            }
+
+            if (seedItem.isEmpty()) return false;
+
+            // 检查瞄准的方块是否为种植土
+            if (isPlantableSoil(state.getBlock())) {
+                var result = client.gameMode.useItemOn(client.player, hand, blockHit);
+                if (result.consumesAction()) {
+                    client.player.swing(hand);
+                    return true;
+                }
             }
 
         } catch (Exception e) {
@@ -170,55 +200,56 @@ public class AutoClicker {
         return false;
     }
 
-    private boolean isPlaceableItem(ItemStack itemStack) {
+    private boolean isPlantableItem(ItemStack itemStack) {
         if (itemStack.isEmpty()) return false;
         var item = itemStack.getItem();
-        var config = ConfigManager.getConfig();
 
-        // 骨粉检测
-        if (config.useBoneMeal && item == Items.BONE_MEAL) {
-            return true;
-        }
-
-        // 种植物品检测
-        if (item instanceof net.minecraft.world.item.BlockItem blockItem) {
-            var block = blockItem.getBlock();
-
-            // 使用更简洁的检查方式
-            return block instanceof CropBlock ||
-                    block instanceof SaplingBlock ||
-                    block instanceof FlowerBlock ||
-                    block instanceof TallFlowerBlock ||
-                    block instanceof MushroomBlock ||
-                    block instanceof NetherWartBlock ||
-                    block instanceof SugarCaneBlock ||
-                    block instanceof CactusBlock ||
-                    block instanceof KelpBlock ||
-                    block instanceof KelpPlantBlock ||
-                    block instanceof SeagrassBlock ||
-                    block instanceof SeaPickleBlock ||
-                    block instanceof StemBlock ||
-                    block instanceof AttachedStemBlock ||
-                    block instanceof BambooSaplingBlock ||
-                    block instanceof BambooStalkBlock ||
-                    block instanceof ChorusFlowerBlock ||
-                    block instanceof ChorusPlantBlock ||
-                    block instanceof TwistingVinesBlock ||
-                    block instanceof TwistingVinesPlantBlock ||
-                    block instanceof WeepingVinesBlock ||
-                    block instanceof WeepingVinesPlantBlock ||
-                    block instanceof CaveVinesBlock ||
-                    block instanceof CaveVinesPlantBlock ||
-                    block instanceof GlowLichenBlock;
-        }
-
-        // 种子物品
+        // 种子类物品
         return item == Items.WHEAT_SEEDS ||
                 item == Items.BEETROOT_SEEDS ||
                 item == Items.MELON_SEEDS ||
                 item == Items.PUMPKIN_SEEDS ||
                 item == Items.TORCHFLOWER_SEEDS ||
-                item == Items.PITCHER_POD;
+                item == Items.PITCHER_POD ||
+                item == Items.COCOA_BEANS ||
+                item == Items.SWEET_BERRIES ||
+                item == Items.GLOW_BERRIES ||
+                // 作物物品
+                item == Items.CARROT ||
+                item == Items.POTATO ||
+                item == Items.NETHER_WART ||
+                // 树苗
+                item == Items.OAK_SAPLING ||
+                item == Items.SPRUCE_SAPLING ||
+                item == Items.BIRCH_SAPLING ||
+                item == Items.JUNGLE_SAPLING ||
+                item == Items.ACACIA_SAPLING ||
+                item == Items.DARK_OAK_SAPLING ||
+                item == Items.MANGROVE_PROPAGULE ||
+                item == Items.CHERRY_SAPLING ||
+                // 其他植物
+                item == Items.RED_MUSHROOM ||
+                item == Items.BROWN_MUSHROOM ||
+                item == Items.SUGAR_CANE ||
+                item == Items.CACTUS ||
+                item == Items.BAMBOO ||
+                item == Items.KELP ||
+                item == Items.SEA_PICKLE ||
+                item == Items.TWISTING_VINES ||
+                item == Items.WEEPING_VINES;
+    }
+
+    private boolean isPlantableSoil(Block block) {
+        return block == Blocks.FARMLAND ||        // 耕地
+                block == Blocks.DIRT ||            // 泥土
+                block == Blocks.GRASS_BLOCK ||     // 草方块
+                block == Blocks.SOUL_SAND ||       // 灵魂沙（地狱疣）
+                block == Blocks.SAND ||            // 沙子（仙人掌、甘蔗）
+                block == Blocks.RED_SAND ||        // 红沙
+                block == Blocks.PODZOL ||          // 灰化土（蘑菇）
+                block == Blocks.MYCELIUM ||        // 菌丝（蘑菇）
+                block == Blocks.CLAY ||            // 黏土（海泡菜）
+                block == Blocks.GRAVEL;            // 沙砾（海草）
     }
 
     // 配置访问方法

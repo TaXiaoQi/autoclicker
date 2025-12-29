@@ -27,7 +27,7 @@ def getVersionGroup = { mcVersion ->
         return "1.21.9"
     } else if (mcVersion == "1.21.10") {
         return "1.21.10"
-    } else if (mcVersion.startsWith("1.21.")) {
+    } else if (mcVersion.startsWith("1.21.1")) {
         return "1.21.1-1.21.8"
     }
     return mcVersion

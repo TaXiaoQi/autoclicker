@@ -192,6 +192,30 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
+        // 随机化启用
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.place_randomness_enabled"),
+                config.placeRandomnessEnabled,
+                value -> {
+                    config.placeRandomnessEnabled = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
+
+        // 随机化范围
+        elements.add(new IntSliderElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.place_randomness_range"),
+                0, 10, config.placeRandomness,
+                value -> {
+                    config.placeRandomness = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 30;
+
         // === 自动静音设置 ===
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_mute"));
         yOffset += 25;
