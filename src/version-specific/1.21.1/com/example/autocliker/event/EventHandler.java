@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
-import net.minecraft.resources.ResourceLocation;
 
 public class EventHandler {
     private static final AutoClicker autoClick = new AutoClicker();
@@ -25,20 +24,14 @@ public class EventHandler {
     private static KeyMapping openGUIKey;
 
     // 自定义分类
-    private static KeyMapping.Category AUTO_CLICKER_CATEGORY;
+    private static final String AUTO_CLICKER_CATEGORY = "key.categories.autoclicker";
 
     public static void register() {
-        registerCustomCategory();
         loadKeyBindingsFromConfig();
         registerKeyBindings();
         registerEvents();
     }
 
-    private static void registerCustomCategory() {
-        AUTO_CLICKER_CATEGORY = KeyMapping.Category.register(
-                ResourceLocation.fromNamespaceAndPath("autoclicker", "category")
-        );
-    }
 
     private static void loadKeyBindingsFromConfig() {
         var config = ConfigManager.getConfig();
@@ -104,6 +97,7 @@ public class EventHandler {
 
         handleKeyBindings();
         autoClick.tick(client);
+        // 注意：不再调用 updateAudioMuteStatus()
     }
 
     private static void handleKeyBindings() {
@@ -161,9 +155,9 @@ public class EventHandler {
 
         if (config.muteOnAutoPlace) {
             if (newState) {
-                audioMute.requestAutoMute();
+                audioMute.requestAutoMute();   // ✅ 统一使用新接口
             } else {
-                audioMute.releaseAutoMute();
+                audioMute.releaseAutoMute();   // ✅
             }
         }
 
@@ -178,8 +172,11 @@ public class EventHandler {
         }
     }
 
+    // ❌ 移除以下方法（不再需要）
+    // private static void updateAudioMuteStatus() { ... }
 
     private static void handlePauseMenu() {
+        // 暂停时恢复音频（仅当非手动静音）
         if (!audioMute.isManuallyMuted()) {
             audioMute.forceRestore();
         }

@@ -1,6 +1,5 @@
 {
-  "key.categories.autoclicker": "自动点击器",
-  "key.category.autoclicker": "自动点击器",
+  "key.category.autoclicker.category": "自动点击器",
 
   "key.autoclicker.mute": "切换静音",
   "key.autoclicker.toggle_attack": "切换自动攻击",

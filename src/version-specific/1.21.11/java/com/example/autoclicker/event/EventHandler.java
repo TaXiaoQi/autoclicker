@@ -12,7 +12,7 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class EventHandler {
     private static final AutoClicker autoClick = new AutoClicker();
@@ -36,7 +36,7 @@ public class EventHandler {
 
     private static void registerCustomCategory() {
         AUTO_CLICKER_CATEGORY = KeyMapping.Category.register(
-                ResourceLocation.fromNamespaceAndPath("autoclicker", "category")
+                Identifier.fromNamespaceAndPath("autoclicker", "category")
         );
     }
 

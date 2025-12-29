@@ -4,7 +4,6 @@ plugins {
 
 // ✅ 定义每个 MC 版本对应的Fabric api
 def fabricApiVersions = [
-        "1.21": "0.102.0+1.21",
         "1.21.1": "0.116.7+1.21.1",
         "1.21.2": "0.106.1+1.21.2",
         "1.21.3": "0.114.1+1.21.3",
@@ -31,7 +30,7 @@ subprojects {
         throw new GradleException("Unsupported Minecraft version: ${mcVersion}. Add it to fabricApiVersions.")
     }
 
-    version = "1.3.0"
+    version = "1.4.0"  // 模组版本
     group = "com.example.autoclicker"
 
     // ✅ 预先定义用于资源处理的变量
@@ -84,8 +83,8 @@ subprojects {
     }
 
     tasks.named('remapJar') {
-        archiveBaseName = "Autoclicker"
-        archiveVersion = "${project.version}+${mcVersion}"
+        archiveBaseName = "Autoclicker"  // 输出的文件名称
+        archiveVersion = "${project.version}+${mcVersion}" // 带版本
     }
 
     tasks.register('copyBuild', Copy) {

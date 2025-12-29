@@ -1,6 +1,5 @@
 {
-  "key.categories.autoclicker": "AutoClicker",
-  "key.category.autoclicker": "AutoClicker",
+  "key.category.autoclicker.category": "AutoClicker",
 
   "key.autoclicker.mute": "Toggle Mute",
   "key.autoclicker.toggle_attack": "Toggle Auto Attack",

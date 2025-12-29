@@ -1,112 +1,176 @@
 package com.example.autoclicker.feature;
 
 import com.example.autoclicker.config.ConfigManager;
-import com.mojang.authlib.minecraft.client.MinecraftClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
+import net.minecraft.sounds.SoundSource;
+import java.util.EnumMap;
+import java.util.Map;
+
 
 public class MuteFeature {
-    private enum MuteReason { NONE, AUTO_FEATURE, MINIMIZED, MANUAL }
-    private MuteReason currentReason = MuteReason.NONE;
-    private Float savedVolume = null;
-    private boolean isManuallyMuted = false;
+    private static class VolumeState {
+        private final Map<SoundSource, Float> volumes = new EnumMap<>(SoundSource.class);
 
-    public void tick(Minecraft client) {
-        // 检查是否应该静音
-        boolean shouldMuteByFeature = shouldMuteByFeature();
-        boolean shouldMuteByMinimize = shouldMuteByMinimize(client);
-
-        // 应用静音逻辑
-        if (shouldMuteByFeature || shouldMuteByMinimize) {
-            if (currentReason == MuteReason.NONE && !isManuallyMuted) {
-                setMuted(true, MuteReason.AUTO_FEATURE);
+        public void save(Options options) {
+            for (SoundSource source : SoundSource.values()) {
+                // 正确获取音量值
+                volumes.put(source, options.getSoundSourceVolume(source));
             }
-        } else if (currentReason == MuteReason.AUTO_FEATURE && !isManuallyMuted) {
-            setMuted(false, MuteReason.NONE);
+        }
+
+        public void restore(Options options) {
+            for (Map.Entry<SoundSource, Float> entry : volumes.entrySet()) {
+                // 正确设置音量值 - 通过 OptionInstance
+                options.getSoundSourceOptionInstance(entry.getKey()).set(entry.getValue().doubleValue());
+            }
+            options.save();
+        }
+
+        public boolean isEmpty() {
+            return volumes.isEmpty();
         }
     }
 
-    private boolean shouldMuteByFeature() {
-        var config = ConfigManager.getConfig();
-        boolean attackActive = config.autoAttackEnabled && config.muteOnAutoAttack;
-        boolean placeActive = config.autoPlaceEnabled && config.muteOnAutoPlace;
-        return attackActive || placeActive;
+    private enum MuteState {
+        UNMUTED,       // 未静音
+        MANUAL_MUTED,  // 手动静音
+        AUTO_MUTED,    // 自动功能静音
+        MINIMIZED_MUTED // 最小化静音
     }
 
-    private boolean shouldMuteByMinimize(Minecraft client) {
-        if (!ConfigManager.getConfig().muteWhenMinimized) {
-            return false;
-        }
-        // 检查窗口是否最小化（简化实现）
-        return !client.isWindowActive();
-    }
+    private MuteState currentState = MuteState.UNMUTED;
+    private final VolumeState savedVolume = new VolumeState();
 
+    private int autoFeatureMuteCount = 0;
+    /**
+     * 一键静音/恢复（手动触发）
+     */
     public void toggleManualMute() {
-        isManuallyMuted = !isManuallyMuted;
-        if (isManuallyMuted) {
-            setMuted(true, MuteReason.MANUAL);
-        } else {
-            setMuted(false, MuteReason.NONE);
-        }
-    }
-
-    public void forceRestore() {
-        if (!isManuallyMuted) {
-            setMuted(false, MuteReason.NONE);
-        }
-    }
-
-    private void setMuted(boolean muted, MuteReason reason) {
         Options options = Minecraft.getInstance().options;
 
-        if (muted) {
-            if (currentReason == MuteReason.NONE) {
-                // 保存当前音量
-                savedVolume = options.masterVolume().get();
-                // 设置音量为0（静音）
-                options.masterVolume().set(0.0);
-                options.save();
-            }
-            currentReason = reason;
+        if (currentState == MuteState.UNMUTED) {
+            // 从非静音状态变为手动静音
+            savedVolume.save(options);
+            muteAllVolumes(options);
+            currentState = MuteState.MANUAL_MUTED;
+        } else if (currentState == MuteState.MANUAL_MUTED) {
+            // 从手动静音恢复
+            savedVolume.restore(options);
+            savedVolume.volumes.clear();
+            currentState = MuteState.UNMUTED;
         } else {
-            if (savedVolume != null) {
-                // 恢复之前保存的音量
-                options.masterVolume().set(savedVolume.doubleValue());
-                options.save();
-                savedVolume = null;
+            // 从其他静音状态切换到手动静音
+            VolumeState tempState = new VolumeState();
+
+            if (currentState == MuteState.AUTO_MUTED || currentState == MuteState.MINIMIZED_MUTED) {
+                // 1. 先恢复原来的音量
+                savedVolume.restore(options);
+
+                // 2. 保存当前音量（作为以后恢复的参考）
+                tempState.save(options);
+
+                // 3. 静音所有音量
+                muteAllVolumes(options);
+
+                // 4. 更新保存的音量
+                savedVolume.volumes.clear();
+                savedVolume.volumes.putAll(tempState.volumes);
             }
-            currentReason = MuteReason.NONE;
+
+            currentState = MuteState.MANUAL_MUTED;
         }
     }
 
-    public boolean isManuallyMuted() {
-        return isManuallyMuted;
-    }
-
-    public void updateMinimizedMute(boolean minimized) {
-        // 窗口最小化静音逻辑
-        if (minimized && ConfigManager.getConfig().muteWhenMinimized) {
-            if (currentReason == MuteReason.NONE && !isManuallyMuted) {
-                setMuted(true, MuteReason.MINIMIZED);
-            }
-        } else if (currentReason == MuteReason.MINIMIZED && !isManuallyMuted) {
-            setMuted(false, MuteReason.NONE);
+    /**
+     * 静音所有音源
+     */
+    private void muteAllVolumes(Options options) {
+        for (SoundSource source : SoundSource.values()) {
+            // 正确设置音量为0
+            options.getSoundSourceOptionInstance(source).set(0.0);
         }
+        options.save();
     }
 
-    public void setMutedByAutoFeature(boolean muted) {
-        if (isManuallyMuted) return; // 手动静音优先级更高
-
-        if (muted) {
-            if (currentReason == MuteReason.NONE) {
-                setMuted(true, MuteReason.AUTO_FEATURE);
-            }
-        } else if (currentReason == MuteReason.AUTO_FEATURE) {
-            setMuted(false, MuteReason.NONE);
-        }
-    }
-
+    /**
+     * 根据配置更新自动功能静音状态
+     */
     public void updateAutoFeatureMute(boolean shouldMute) {
-        setMutedByAutoFeature(shouldMute);
+        if (currentState == MuteState.MANUAL_MUTED) {
+            return; // 手动静音优先级最高
+        }
+
+        Options options = Minecraft.getInstance().options;
+
+        if (shouldMute && currentState == MuteState.UNMUTED) {
+            // 需要静音：保存当前音量并静音
+            savedVolume.save(options);
+            muteAllVolumes(options);
+            currentState = MuteState.AUTO_MUTED;
+        } else if (!shouldMute && currentState == MuteState.AUTO_MUTED) {
+            // 需要恢复：只有自动功能静音时才恢复
+            savedVolume.restore(options);
+            savedVolume.volumes.clear();
+            currentState = MuteState.UNMUTED;
+        }
+    }
+
+    /**
+     * 更新最小化静音状态
+     */
+    public void updateMinimizedMute(boolean minimized) {
+        var config = ConfigManager.getConfig();
+        if (!config.muteWhenMinimized || currentState == MuteState.MANUAL_MUTED) {
+            return;
+        }
+
+        Options options = Minecraft.getInstance().options;
+
+        if (minimized && currentState == MuteState.UNMUTED) {
+            // 最小化时静音
+            savedVolume.save(options);
+            muteAllVolumes(options);
+            currentState = MuteState.MINIMIZED_MUTED;
+        } else if (!minimized && currentState == MuteState.MINIMIZED_MUTED) {
+            // 恢复窗口时恢复音量
+            savedVolume.restore(options);
+            savedVolume.volumes.clear();
+            currentState = MuteState.UNMUTED;
+        }
+    }
+
+    /**
+     * 强制恢复所有音频（用于退出游戏等场景）
+     */
+    public void forceRestore() {
+        if (currentState != MuteState.UNMUTED && !savedVolume.isEmpty()) {
+            savedVolume.restore(Minecraft.getInstance().options);
+            savedVolume.volumes.clear();
+            currentState = MuteState.UNMUTED;
+        }
+    }
+
+    /**
+     * 检查是否处于手动静音状态
+     */
+    public boolean isManuallyMuted() {
+        return currentState == MuteState.MANUAL_MUTED;
+    }
+
+    public void requestAutoMute() {
+        if (autoFeatureMuteCount == 0) {
+            updateAutoFeatureMute(true);
+        }
+        autoFeatureMuteCount++;
+    }
+
+    public void releaseAutoMute() {
+        if (autoFeatureMuteCount > 0) {
+            autoFeatureMuteCount--;
+            if (autoFeatureMuteCount == 0) {
+                updateAutoFeatureMute(false);
+            }
+        }
     }
 }
