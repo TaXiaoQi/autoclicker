@@ -10,20 +10,10 @@ pluginManagement {
 
 rootProject.name = "autoclicker-multi"
 
-// 包含所有支持的版本，但都指向根目录
-include '1.21.1'
-include '1.21.2'
-include '1.21.3'
-include '1.21.4'
-include '1.21.5'
-include '1.21.6'
-include '1.21.7'
-include '1.21.8'
-include '1.21.9'
-include '1.21.10'
-include '1.21.11'
-
-// 所有子项目共享根目录
-rootProject.children.each { project ->
-    project.projectDir = rootDir
+def versionsDir = file("versions")
+if (versionsDir.exists() && versionsDir.isDirectory()) {
+    versionsDir.eachDir { dir ->
+        include dir.name
+        project(":${dir.name}").projectDir = dir
+    }
 }

@@ -1,4 +1,18 @@
 plugins {
+    id 'fabric-loom' version '1.14-SNAPSHOT'
+}
+
+rootProject.name = "autoclicker-multi"
+
+def versionsDir = file("versions")
+if (versionsDir.exists() && versionsDir.isDirectory()) {
+    versionsDir.eachDir { dir ->
+        include dir.name
+        project(":${dir.name}").projectDir = dir
+    }
+}
+
+plugins {
     id 'fabric-loom' version '1.14-SNAPSHOT' apply false
 }
 
