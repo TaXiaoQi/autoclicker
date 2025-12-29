@@ -1,3 +1,4 @@
+
 package com.example.autoclicker.gui;
 
 import com.example.autoclicker.gui.elements.ConfigElement;
@@ -12,26 +13,17 @@ public class GuiFactory {
             int x, int y, int width, int height,
             Component label, boolean defaultValue,
             Consumer<Boolean> onChanged) {
+
         try {
-            // 首先尝试1.21.11版本
-            Class<?> clazz1211 = Class.forName("com.example.autoclicker.gui.elements.v1211.BooleanElement");
-            return (ConfigElement<Boolean>) clazz1211.getConstructor(
+            Class<?> booleanElementClass = Class.forName("com.example.autoclicker.gui.elements.BooleanElement");
+            return (ConfigElement<Boolean>) booleanElementClass.getConstructor(
                     int.class, int.class, int.class, int.class,
                     Component.class, boolean.class, Consumer.class
             ).newInstance(x, y, width, height, label, defaultValue, onChanged);
         } catch (ClassNotFoundException e) {
-            // 回退到默认版本
-            try {
-                Class<?> clazz = Class.forName("com.example.autoclicker.gui.elements.BooleanElement");
-                return (ConfigElement<Boolean>) clazz.getConstructor(
-                        int.class, int.class, int.class, int.class,
-                        Component.class, boolean.class, Consumer.class
-                ).newInstance(x, y, width, height, label, defaultValue, onChanged);
-            } catch (Exception ex) {
-                throw new RuntimeException("无法创建 BooleanElement", ex);
-            }
+            throw new RuntimeException("BooleanElement not found. Make sure it exists in the version-specific directory", e);
         } catch (Exception e) {
-            throw new RuntimeException("创建 BooleanElement 失败", e);
+            throw new RuntimeException("Failed to create BooleanElement: " + e.getMessage(), e);
         }
     }
 }

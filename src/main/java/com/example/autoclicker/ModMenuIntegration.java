@@ -1,13 +1,26 @@
 package com.example.autoclicker;
 
-import com.example.autoclicker.gui.ConfigScreen;
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
+import net.minecraft.client.gui.screens.Screen;
 
 public class ModMenuIntegration implements ModMenuApi {
+
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return ConfigScreen::new;
+        return parent -> {
+            try {
+                // 动态加载版本特定的 ConfigScreen
+                Class<?> configScreenClass = Class.forName("com.example.autoclicker.gui.ConfigScreen");
+                return (Screen) configScreenClass.getConstructor(Screen.class).newInstance(parent);
+            } catch (ClassNotFoundException e) {
+                // ConfigScreen 不存在于当前版本
+                System.err.println("ConfigScreen not found in this version. ModMenu integration disabled.");
+                return null;
+            } catch (Exception e) {
+                System.err.println("Failed to create ConfigScreen: " + e.getMessage());
+                return null;
+            }
+        };
     }
-
 }
