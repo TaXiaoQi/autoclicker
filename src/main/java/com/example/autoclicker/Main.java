@@ -3,6 +3,8 @@ package com.example.autoclicker;
 
 import com.example.autoclicker.config.ConfigManager;
 import net.fabricmc.api.ClientModInitializer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +25,15 @@ public class Main implements ClientModInitializer {
             LOGGER.error("EventHandler class not found. Make sure it exists in the version-specific directory");
         } catch (Exception e) {
             LOGGER.error("Failed to load EventHandler", e);
+        }
+    }
+
+    // 模组启动反馈
+    public static void sendMessage(String translationKey, Object... args) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player != null) {
+            Component message = Component.translatable(translationKey, args);
+            client.player.displayClientMessage(message, true);
         }
     }
 }

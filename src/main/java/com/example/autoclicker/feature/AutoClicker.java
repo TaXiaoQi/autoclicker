@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.network.chat.Component;
 
 public class AutoClicker {
     private int attackTickCounter = 0;
@@ -17,37 +18,74 @@ public class AutoClicker {
     private int attackCooldown = 0;
     private int placeCooldown = 0;
 
+    private long lastSuccessfulAttackTime = -1;
+    private long lastSuccessfulPlaceTime = -1;
+
+    private static final long TIMEOUT_TICKS = 2400L; // 120秒
+
     public void tick(Minecraft client) {
         if (client.player == null || client.level == null) return;
 
+        var levelTime = client.level.getGameTime(); // 获取当前游戏刻
         // 更新冷却计时器
         if (attackCooldown > 0) attackCooldown--;
         if (placeCooldown > 0) placeCooldown--;
 
-        // 自动攻击逻辑
+        // ===== 自动攻击逻辑 =====
         if (isAutoAttackEnabled()) {
             attackTickCounter++;
             if (attackTickCounter >= getAttackInterval() && attackCooldown <= 0) {
                 if (performAttack(client)) {
                     attackTickCounter = 0;
                     attackCooldown = getAttackCooldown();
+                    lastSuccessfulAttackTime = levelTime; // ✅ 记录成功时间
                 }
             }
         } else {
             attackTickCounter = 0;
+            lastSuccessfulAttackTime = -1; // 关闭时清空
         }
 
-        // 自动放置逻辑
+        // ===== 自动放置逻辑 =====
         if (isAutoPlaceEnabled()) {
             placeTickCounter++;
             if (placeTickCounter >= getPlaceInterval() && placeCooldown <= 0) {
                 if (performAutoPlace(client)) {
                     placeTickCounter = 0;
                     placeCooldown = getPlaceCooldown();
+                    lastSuccessfulPlaceTime = levelTime; // ✅ 记录成功时间
                 }
             }
         } else {
             placeTickCounter = 0;
+            lastSuccessfulPlaceTime = -1; // 关闭时清空
+        }
+
+        // ===== 超时检测 =====
+        checkAndDisableTimeout(client, levelTime);
+    }
+
+    private void checkAndDisableTimeout(Minecraft client, long currentTime) {
+        var config = ConfigManager.getConfig();
+
+        // 检查自动攻击超时
+        if (config.autoAttackEnabled && lastSuccessfulAttackTime != -1) {
+            if (currentTime - lastSuccessfulAttackTime >= TIMEOUT_TICKS) {
+                config.autoAttackEnabled = false;
+                ConfigManager.save();
+                Main.sendMessage("autoclicker.message.auto_disabled_timeout",
+                        Component.translatable("autoclicker.feature.attack"));
+            }
+        }
+
+        // 检查自动放置超时
+        if (config.autoPlaceEnabled && lastSuccessfulPlaceTime != -1) {
+            if (currentTime - lastSuccessfulPlaceTime >= TIMEOUT_TICKS) {
+                config.autoPlaceEnabled = false;
+                ConfigManager.save();
+                Main.sendMessage("autoclicker.message.auto_disabled_timeout",
+                        Component.translatable("autoclicker.feature.place"));
+            }
         }
     }
 

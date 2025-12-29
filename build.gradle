@@ -1,18 +1,4 @@
 plugins {
-    id 'fabric-loom' version '1.14-SNAPSHOT'
-}
-
-rootProject.name = "autoclicker-multi"
-
-def versionsDir = file("versions")
-if (versionsDir.exists() && versionsDir.isDirectory()) {
-    versionsDir.eachDir { dir ->
-        include dir.name
-        project(":${dir.name}").projectDir = dir
-    }
-}
-
-plugins {
     id 'fabric-loom' version '1.14-SNAPSHOT' apply false
 }
 
@@ -33,7 +19,7 @@ def fabricApiVersions = [
 
 // def modMenuVersions = "7.2.2"
 
-// 版本分组
+// 版本分组映射
 def getVersionGroup = { mcVersion ->
     if (mcVersion == "1.21.11") {
         return "1.21.11"
@@ -117,14 +103,17 @@ subprojects {
         archiveVersion = "${project.version}+${mcVersion}"
     }
 
+    def outputDir = rootProject.layout.projectDirectory.dir("dist")
+    def outputFileName = "Autoclicker-${project.version}+${mcVersion}.jar"
+
     tasks.register('copyBuild', Copy) {
+        description = "Copy remapped JAR to root dist directory"
+        group = "build"
+
         dependsOn tasks.named('remapJar')
         from(tasks.named('remapJar').map { it.archiveFile })
-        into("$rootDir/dist")
-
-        rename { fileName ->
-            "Autoclicker-${mcVersion}.jar"
-        }
+        into(outputDir)
+        rename { outputFileName }
     }
 
     tasks.named('build') {
@@ -137,36 +126,68 @@ tasks.register('buildAllVersions') {
     group = 'build'
     description = 'Build all supported Minecraft versions sequentially'
 
-    // 定义构建顺序
-    def buildOrder = [
-            ':1.21.1:build',
-            ':1.21.2:build',
-            ':1.21.3:build',
-            ':1.21.4:build',
-            ':1.21.5:build',
-            ':1.21.6:build',
-            ':1.21.7:build',
-            ':1.21.8:build',
-            ':1.21.9:build',
-            ':1.21.10:build',
-            ':1.21.11:build'
-    ]
+    // 使用 dependsOn 链
+    dependsOn ':1.21.1:build'
 
-    // 创建任务依赖链，确保顺序执行
-    buildOrder.eachWithIndex { taskPath, index ->
-        if (index > 0) {
-            tasks.findByPath(taskPath)?.mustRunAfter(buildOrder[index - 1])
-        }
-        dependsOn taskPath
+    // 手动配置链式依赖
+    project(':1.21.2').tasks.named('build').configure {
+        mustRunAfter ':1.21.1:build'
     }
+    dependsOn ':1.21.2:build'
+
+    project(':1.21.3').tasks.named('build').configure {
+        mustRunAfter ':1.21.2:build'
+    }
+    dependsOn ':1.21.3:build'
+
+    project(':1.21.4').tasks.named('build').configure {
+        mustRunAfter ':1.21.3:build'
+    }
+    dependsOn ':1.21.4:build'
+
+    project(':1.21.5').tasks.named('build').configure {
+        mustRunAfter ':1.21.4:build'
+    }
+    dependsOn ':1.21.5:build'
+
+    project(':1.21.6').tasks.named('build').configure {
+        mustRunAfter ':1.21.5:build'
+    }
+    dependsOn ':1.21.6:build'
+
+    project(':1.21.7').tasks.named('build').configure {
+        mustRunAfter ':1.21.6:build'
+    }
+    dependsOn ':1.21.7:build'
+
+    project(':1.21.8').tasks.named('build').configure {
+        mustRunAfter ':1.21.7:build'
+    }
+    dependsOn ':1.21.8:build'
+
+    project(':1.21.9').tasks.named('build').configure {
+        mustRunAfter ':1.21.8:build'
+    }
+    dependsOn ':1.21.9:build'
+
+    project(':1.21.10').tasks.named('build').configure {
+        mustRunAfter ':1.21.9:build'
+    }
+    dependsOn ':1.21.10:build'
+
+    project(':1.21.11').tasks.named('build').configure {
+        mustRunAfter ':1.21.10:build'
+    }
+    dependsOn ':1.21.11:build'
 }
 
+// 构建文件输出至指定文件夹
 tasks.register('cleanAll') {
     group = 'build'
     description = 'Clean all versions'
     dependsOn subprojects*.tasks*.clean
 
     doLast {
-        delete "$rootDir/dist"
+        delete "$rootDir/dist"  // 目的文件夹
     }
 }

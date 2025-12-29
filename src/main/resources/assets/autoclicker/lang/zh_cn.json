@@ -1,4 +1,5 @@
 {
+  "key.category.autoclicker.category": "自动点击器",
   "key.categories.autoclicker": "自动点击器",
   "key.category.autoclicker": "自动点击器",
 
@@ -38,7 +39,7 @@
 
   "autoclicker.message.attack_toggle": "自动攻击%s（间隔：%s 游戏刻）",
   "autoclicker.message.place_toggle": "自动放置%s（间隔：%s 游戏刻，骨粉：%s）",
-  "autoclicker.message.auto_disabled_timeout": "自动%s因长时间无操作已关闭（>60秒）",
+  "autoclicker.message.auto_disabled_timeout": "自动%s因长时间无操作已关闭",
 
   "autoclicker.feature.attack": "攻击",
   "autoclicker.feature.place": "放置",
@@ -46,5 +47,13 @@
   "autoclicker.bonemeal.included": "启用",
   "autoclicker.bonemeal.excluded": "禁用",
   "gui.cancel": "取消",
-  "gui.done": "完成"
+  "gui.done": "完成",
+
+  "config.section.auto_mute": "自动静音设置",
+  "config.mute_when_minimized": "窗口最小化时静音",
+  "config.mute_on_auto_attack": "自动攻击时静音",
+  "config.mute_on_auto_place": "自动放置时静音",
+
+  "autoclicker.message.muted": "音频已静音",
+  "autoclicker.message.unmuted": "音频已恢复"
 }

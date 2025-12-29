@@ -1,4 +1,5 @@
 {
+  "key.category.autoclicker.category": "AutoClicker",
   "key.categories.autoclicker": "AutoClicker",
   "key.category.autoclicker": "AutoClicker",
 
@@ -47,5 +48,13 @@
   "autoclicker.bonemeal.excluded": "Disabled",
 
   "gui.cancel": "Cancel",
-  "gui.done": "Done"
+  "gui.done": "Done",
+
+  "config.section.auto_mute": "Auto Mute Settings",
+  "config.mute_when_minimized": "Mute When Minimized",
+  "config.mute_on_auto_attack": "Mute During Auto Attack",
+  "config.mute_on_auto_place": "Mute During Auto Place",
+
+  "autoclicker.message.muted": "Audio muted",
+  "autoclicker.message.unmuted": "Audio restored"
 }

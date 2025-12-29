@@ -192,6 +192,46 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
+        // === 自动静音设置 ===
+        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_mute"));
+        yOffset += 25;
+
+        // ✅ 使用工厂方法：最小化时静音
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.mute_when_minimized"),
+                config.muteWhenMinimized,
+                value -> {
+                    config.muteWhenMinimized = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
+
+        // ✅ 使用工厂方法：自动攻击时静音
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.mute_on_auto_attack"),
+                config.muteOnAutoAttack,
+                value -> {
+                    config.muteOnAutoAttack = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
+
+        // ✅ 使用工厂方法：自动放置时静音
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.mute_on_auto_place"),
+                config.muteOnAutoPlace,
+                value -> {
+                    config.muteOnAutoPlace = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 30;
+
         // === 反检测设置 ===
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.anti_detection"));
         yOffset += 25;

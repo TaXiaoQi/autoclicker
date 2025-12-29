@@ -77,10 +77,9 @@ public class EventHandler {
 
         // 窗口焦点检测（最小化/失去焦点时静音）
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player != null) {
                 boolean windowActive = client.isWindowActive();
                 audioMute.updateMinimizedMute(!windowActive);
-            }
+
         });
 
         ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
@@ -97,7 +96,6 @@ public class EventHandler {
 
         handleKeyBindings();
         autoClick.tick(client);
-        // 注意：不再调用 updateAudioMuteStatus()
     }
 
     private static void handleKeyBindings() {
@@ -115,22 +113,18 @@ public class EventHandler {
         }
     }
 
+    // 自动静音
     private static void handleMuteKey() {
         audioMute.toggleManualMute();
-
-        var config = ConfigManager.getConfig();
-        if (audioMute.isManuallyMuted()) {
-            // 手动静音时，可选择关闭自动功能（按需保留）
-            if (config.muteOnAutoAttack) {
-                config.autoAttackEnabled = false;
-            }
-            if (config.muteOnAutoPlace) {
-                config.autoPlaceEnabled = false;
-            }
-        }
         ConfigManager.save();
+        if (audioMute.isManuallyMuted()) {
+            Main.sendMessage("autoclicker.message.muted");
+        } else {
+            Main.sendMessage("autoclicker.message.unmuted");
+        }
     }
 
+    // 自动攻击
     private static void handleToggleAttackKey() {
         var config = ConfigManager.getConfig();
         boolean newState = !config.autoAttackEnabled;
@@ -146,8 +140,25 @@ public class EventHandler {
 
         autoClick.resetAttackTimer();
         ConfigManager.save();
+
+        String status = newState ? "gui.autoclicker.enabled" : "gui.autoclicker.disabled";
+
+        String intervalDisplay;
+        if (newState && config.attackRandomnessEnabled) {
+            int min = config.attackInterval;
+            int max = config.attackInterval + config.attackRandomness;
+            intervalDisplay = min + "~" + max;
+        } else {
+            intervalDisplay = String.valueOf(config.attackInterval);
+        }
+
+        Main.sendMessage("autoclicker.message.attack_toggle",
+                Component.translatable(status),
+                intervalDisplay
+        );
     }
 
+    // 自动放置
     private static void handleTogglePlaceKey() {
         var config = ConfigManager.getConfig();
         boolean newState = !config.autoPlaceEnabled;
@@ -155,15 +166,36 @@ public class EventHandler {
 
         if (config.muteOnAutoPlace) {
             if (newState) {
-                audioMute.requestAutoMute();   // ✅ 统一使用新接口
+                audioMute.requestAutoMute();
             } else {
-                audioMute.releaseAutoMute();   // ✅
+                audioMute.releaseAutoMute();
             }
         }
 
         autoClick.resetPlaceTimer();
         ConfigManager.save();
+
+        String status = newState ? "gui.autoclicker.enabled" : "gui.autoclicker.disabled";
+        String boneMealStatus = config.useBoneMeal
+                ? "autoclicker.bonemeal.included"
+                : "autoclicker.bonemeal.excluded";
+
+        String intervalDisplay;
+        if (newState && config.placeRandomnessEnabled) {
+            int min = config.placeInterval;
+            int max = config.placeInterval + config.placeRandomness;
+            intervalDisplay = min + "~" + max;
+        } else {
+            intervalDisplay = String.valueOf(config.placeInterval);
+        }
+
+        Main.sendMessage("autoclicker.message.place_toggle",
+                Component.translatable(status),
+                intervalDisplay,
+                Component.translatable(boneMealStatus)
+        );
     }
+
 
     private static void handleOpenGUIKey() {
         Minecraft client = Minecraft.getInstance();
@@ -171,9 +203,6 @@ public class EventHandler {
             client.setScreen(new ConfigScreen(null));
         }
     }
-
-    // ❌ 移除以下方法（不再需要）
-    // private static void updateAudioMuteStatus() { ... }
 
     private static void handlePauseMenu() {
         // 暂停时恢复音频（仅当非手动静音）
