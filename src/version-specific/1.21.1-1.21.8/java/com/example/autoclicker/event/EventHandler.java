@@ -1,5 +1,6 @@
 package com.example.autoclicker.event;
 
+import com.example.autoclicker.Main;
 import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.feature.AutoClicker;
 import com.example.autoclicker.feature.MuteFeature;
@@ -12,6 +13,7 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.network.chat.Component;
 
 public class EventHandler {
     private static final AutoClicker autoClick = new AutoClicker();
@@ -96,6 +98,7 @@ public class EventHandler {
 
         handleKeyBindings();
         autoClick.tick(client);
+        audioMute.checkUserVolumeChange();
     }
 
     private static void handleKeyBindings() {

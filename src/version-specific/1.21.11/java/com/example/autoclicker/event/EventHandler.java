@@ -105,6 +105,8 @@ public class EventHandler {
 
         handleKeyBindings();
         autoClick.tick(client);
+
+        audioMute.checkUserVolumeChange();
     }
 
     private static void handleKeyBindings() {

@@ -5,7 +5,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -29,7 +28,7 @@ public class BooleanElement extends AbstractButton implements ConfigElement<Bool
     }
 
     @Override
-    public void onPress(InputWithModifiers inputWithModifiers) {
+    public void onPress() {
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
         this.value = !this.value;
         updateText();
@@ -44,8 +43,6 @@ public class BooleanElement extends AbstractButton implements ConfigElement<Bool
                 Component.literal("false").withStyle(ChatFormatting.RED);
         setMessage(originalLabel.copy().append(": ").append(status));
     }
-
-
 
     // ========== ConfigElement ==========
 

@@ -9,6 +9,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -240,7 +241,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+    public boolean mouseDragged(@NonNull MouseButtonEvent event, double deltaX, double deltaY) {
         if (draggingScrollBar && needsScrollBar()) {
             double mouseY = event.y();
             int trackTop = getY() + CONTENT_TOP_PADDING;
@@ -295,7 +296,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
+    public boolean mouseReleased(@NonNull MouseButtonEvent event) {
         if (draggingScrollBar) {
             draggingScrollBar = false;
             return true;
@@ -379,7 +380,7 @@ public class ScrollableList extends AbstractWidget implements GuiEventListener, 
     // ===== Narration =====
 
     @Override
-    protected void updateWidgetNarration(NarrationElementOutput output) {}
+    protected void updateWidgetNarration(@NonNull NarrationElementOutput output) {}
 
     @Override
     public @NotNull NarrationPriority narrationPriority() {

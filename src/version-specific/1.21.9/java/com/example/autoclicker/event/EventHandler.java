@@ -1,5 +1,6 @@
 package com.example.autoclicker.event;
 
+import com.example.autoclicker.Main;
 import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.feature.AutoClicker;
 import com.example.autoclicker.feature.MuteFeature;
@@ -12,6 +13,8 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public class EventHandler {
     private static final AutoClicker autoClick = new AutoClicker();
@@ -24,7 +27,8 @@ public class EventHandler {
     private static KeyMapping openGUIKey;
 
     // 自定义分类
-    private static final String AUTO_CLICKER_CATEGORY = "key.categories.autoclicker";
+    private static final KeyMapping.Category AUTO_CLICKER_CATEGORY =
+            KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath("autoclicker", "main"));
 
     public static void register() {
         loadKeyBindingsFromConfig();
@@ -95,6 +99,7 @@ public class EventHandler {
 
         handleKeyBindings();
         autoClick.tick(client);
+        audioMute.checkUserVolumeChange();
     }
 
     private static void handleKeyBindings() {
