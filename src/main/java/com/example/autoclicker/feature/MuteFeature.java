@@ -15,7 +15,7 @@ public class MuteFeature {
     }
 
     private MuteState currentState = MuteState.UNMUTED;
-    private Float savedMasterVolume = null; // 只保存主音量
+    private Float savedMasterVolume = null; // 保存主音量
 
     private int autoFeatureMuteCount = 0;
 
@@ -34,10 +34,6 @@ public class MuteFeature {
             savedMasterVolume = null;
             currentState = MuteState.UNMUTED;
         } else {
-            // 不管当前是 AUTO 还是 MINIMIZED，都视为“用户要取消静音”
-            // 但我们先检查：是否真的需要恢复？
-
-            // 如果当前是静音状态（非 MANUAL），说明 savedMasterVolume 是原始音量
             if (currentState != MuteState.UNMUTED && savedMasterVolume != null) {
                 // 恢复原始音量
                 options.getSoundSourceOptionInstance(SoundSource.MASTER).set(savedMasterVolume.doubleValue());
@@ -46,7 +42,7 @@ public class MuteFeature {
                 currentState = MuteState.UNMUTED;
             } else {
                 // 当前未静音（UNMUTED）→ 进入手动静音
-                savedMasterVolume = (float) options.getSoundSourceVolume(SoundSource.MASTER);
+                savedMasterVolume = options.getSoundSourceVolume(SoundSource.MASTER);
                 options.getSoundSourceOptionInstance(SoundSource.MASTER).set(0.0);
                 options.save();
                 currentState = MuteState.MANUAL_MUTED;
@@ -63,7 +59,7 @@ public class MuteFeature {
         if (autoFeatureMuteCount == 0) {
             Options options = Minecraft.getInstance().options;
             if (currentState == MuteState.UNMUTED) {
-                savedMasterVolume = (float) options.getSoundSourceVolume(SoundSource.MASTER);
+                savedMasterVolume = options.getSoundSourceVolume(SoundSource.MASTER);
                 options.getSoundSourceOptionInstance(SoundSource.MASTER).set(0.0);
                 options.save();
                 currentState = MuteState.AUTO_MUTED;
@@ -93,7 +89,7 @@ public class MuteFeature {
         Options options = Minecraft.getInstance().options;
 
         if (minimized && currentState == MuteState.UNMUTED) {
-            savedMasterVolume = (float) options.getSoundSourceVolume(SoundSource.MASTER);
+            savedMasterVolume = options.getSoundSourceVolume(SoundSource.MASTER);
             options.getSoundSourceOptionInstance(SoundSource.MASTER).set(0.0);
             options.save();
             currentState = MuteState.MINIMIZED_MUTED;
@@ -113,13 +109,9 @@ public class MuteFeature {
         Options options = Minecraft.getInstance().options;
         double currentMaster = options.getSoundSourceVolume(SoundSource.MASTER);
 
-        // 如果当前主音量 > 0，说明用户手动调高了音量
-        // 或者即使调低了但 ≠ 0，也视为干预（因为静音时应为 0）
         if (currentMaster > 0.0) {
-            // 用户干预：退出所有静音，回到开放状态
             savedMasterVolume = null;
             currentState = MuteState.UNMUTED;
-            // 注意：不恢复音量！因为用户已经设了他想要的值
         }
     }
 

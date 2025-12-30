@@ -4,9 +4,11 @@ import com.example.autoclicker.Main;
 import com.example.autoclicker.config.ConfigManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -62,10 +64,10 @@ public class AutoClicker {
         }
 
         // ===== 超时检测 =====
-        checkAndDisableTimeout(client, levelTime);
+        checkAndDisableTimeout(levelTime);
     }
 
-    private void checkAndDisableTimeout(Minecraft client, long currentTime) {
+    private void checkAndDisableTimeout(long currentTime) {
         var config = ConfigManager.getConfig();
 
         // 检查自动攻击超时
@@ -139,7 +141,10 @@ public class AutoClicker {
 
             var level = client.level;
             var pos = blockHit.getBlockPos();
-            var state = level.getBlockState(pos);
+            BlockState state = null;
+            if (level != null) {
+                state = level.getBlockState(pos);
+            }
             var config = ConfigManager.getConfig();
 
             // 检查主副手物品
@@ -149,9 +154,9 @@ public class AutoClicker {
             // ===== 1. 骨粉逻辑 =====
             if (config.useBoneMeal) {
                 // 检查瞄准的方块是否是可催熟的植物
-                if (state.getBlock() instanceof CropBlock ||
+                if (state != null && (state.getBlock() instanceof CropBlock ||
                         state.getBlock() instanceof SaplingBlock ||
-                        state.getBlock() instanceof StemBlock) {
+                        state.getBlock() instanceof StemBlock)) {
 
                     // 检查主副手是否有骨粉
                     if (mainHandItem.getItem() == Items.BONE_MEAL) {
@@ -186,9 +191,12 @@ public class AutoClicker {
             if (seedItem.isEmpty()) return false;
 
             // 检查瞄准的方块是否为种植土
-            if (isPlantableSoil(state.getBlock())) {
-                var result = client.gameMode.useItemOn(client.player, hand, blockHit);
-                if (result.consumesAction()) {
+            if (state != null && isPlantableSoil(state.getBlock())) {
+                InteractionResult result = null;
+                if (hand != null) {
+                    result = client.gameMode.useItemOn(client.player, hand, blockHit);
+                }
+                if (result != null && result.consumesAction()) {
                     client.player.swing(hand);
                     return true;
                 }
