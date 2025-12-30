@@ -46,7 +46,7 @@ subprojects {
         throw new GradleException("Unsupported Minecraft version: ${mcVersion}. Add it to fabricApiVersions.")
     }
 
-    version = "1.4.0"  // 模组版本
+    version = "1.4.1"  // 模组版本
     group = "com.example.autoclicker"
 
     // 定义用于资源处理的变量
