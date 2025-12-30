@@ -28,6 +28,12 @@ The mod features an intelligent **auto-mute system** with three priority levels:
 2. **Linked (Medium Priority)**: Automatically mutes when Auto Attack or Auto Planting is active (configurable).
 3. **Focus-Based (Lowest Priority)**: Mutes when the Minecraft window loses focus or is minimized, and restores volume when you return.
 
+> **Known Issue**: If the game is forcefully closed via the launcher (e.g., "Close Game" button in MultiMC, Prism, or the official launcher) while muted, the audio may remain stuck at zero after restarting Minecraft.
+>
+> **Cause**: The mod stores the original volume in memory and relies on Minecraft’s shutdown event to restore it. When the game process is terminated externally (not via in-game exit), this event is never fired, so the volume isn’t restored. Additionally, the mod’s runtime data is lost, so the next launch starts with volume = 0.
+>
+> **Workaround**: Manually adjust the master volume in Minecraft’s sound settings once after relaunching.
+
 ## **Efficiency & Customization**
 
 - **Auto Attack**: Default interval = 20 ticks (1 second).
@@ -51,5 +57,6 @@ Both intervals are fully adjustable via the **F10 configuration menu**, where yo
 
 While this mod includes anti-detection features (e.g., randomized timing), it remains an automation aid and **may still be flagged by certain server anti-cheat systems**. Always check with your server administrator before use to avoid potential bans.
 
-## License
+## **License**
+
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
