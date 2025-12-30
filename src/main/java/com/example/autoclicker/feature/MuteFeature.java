@@ -135,8 +135,4 @@ public class MuteFeature {
     public boolean isManuallyMuted() {
         return currentState == MuteState.MANUAL_MUTED;
     }
-
-    public boolean isMuted() {
-        return currentState != MuteState.UNMUTED;
-    }
 }
