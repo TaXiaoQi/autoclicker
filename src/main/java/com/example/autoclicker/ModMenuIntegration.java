@@ -14,7 +14,6 @@ public class ModMenuIntegration implements ModMenuApi {
                 Class<?> configScreenClass = Class.forName("com.example.autoclicker.gui.ConfigScreen");
                 return (Screen) configScreenClass.getConstructor(Screen.class).newInstance(parent);
             } catch (ClassNotFoundException e) {
-                // ConfigScreen 不存在于当前版本
                 System.err.println("ConfigScreen not found in this version. ModMenu integration disabled.");
                 return null;
             } catch (Exception e) {

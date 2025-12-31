@@ -232,8 +232,9 @@ public class EventHandler {
         }
     }
 
+    // 游戏完全退出时，恢复所有静音（包括手动）
     private static void handleGameExit() {
-        audioMute.forceRestore();
+        audioMute.forceRestoreAll();
         ConfigManager.save();
     }
 }
