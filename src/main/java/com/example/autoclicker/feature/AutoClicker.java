@@ -40,12 +40,12 @@ public class AutoClicker {
                 if (performAttack(client)) {
                     attackTickCounter = 0;
                     attackCooldown = getAttackCooldown();
-                    lastSuccessfulAttackTime = levelTime; // ✅ 记录成功时间
+                    lastSuccessfulAttackTime = levelTime;
                 }
             }
         } else {
             attackTickCounter = 0;
-            lastSuccessfulAttackTime = -1; // 关闭时清空
+            lastSuccessfulAttackTime = -1;
         }
 
         // ===== 自动放置逻辑 =====
@@ -55,18 +55,17 @@ public class AutoClicker {
                 if (performAutoPlace(client)) {
                     placeTickCounter = 0;
                     placeCooldown = getPlaceCooldown();
-                    lastSuccessfulPlaceTime = levelTime; // ✅ 记录成功时间
+                    lastSuccessfulPlaceTime = levelTime;
                 }
             }
         } else {
             placeTickCounter = 0;
-            lastSuccessfulPlaceTime = -1; // 关闭时清空
+            lastSuccessfulPlaceTime = -1;
         }
-
-        // ===== 超时检测 =====
         checkAndDisableTimeout(levelTime);
     }
 
+    // ===== 超时检测 =====
     private void checkAndDisableTimeout(long currentTime) {
         var config = ConfigManager.getConfig();
 
@@ -89,6 +88,26 @@ public class AutoClicker {
                         Component.translatable("autoclicker.feature.place"));
             }
         }
+    }
+
+    // 断开连接时重置自动化状态
+    public void resetAutomationOnDisconnect() {
+        var config = ConfigManager.getConfig();
+
+        // 重置计时器
+        attackTickCounter = 0;
+        placeTickCounter = 0;
+        attackCooldown = 0;
+        placeCooldown = 0;
+        lastSuccessfulAttackTime = -1;
+        lastSuccessfulPlaceTime = -1;
+
+        // 关闭自动化功能
+        config.autoAttackEnabled = false;
+        config.autoPlaceEnabled = false;
+
+        // 保存配置
+        ConfigManager.save();
     }
 
     private boolean performAttack(Minecraft client) {

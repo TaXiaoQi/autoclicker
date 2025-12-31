@@ -9,8 +9,10 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
 
 public class EventHandler {
@@ -83,6 +85,16 @@ public class EventHandler {
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> handleGameExit());
+        ClientPlayConnectionEvents.DISCONNECT.register(EventHandler::onDisconnect);
+    }
+
+    // 断开连接时调用（离开服务器/世界时）
+    private static void onDisconnect(ClientPacketListener handler, Minecraft client) {
+        // 1. 重置自动化状态（关闭自动攻击/放置）
+        autoClick.resetAutomationOnDisconnect();
+
+        // 2. 恢复自动静音（但不恢复手动静音）
+        audioMute.forceRestore();
     }
 
     private static void onClientTick(Minecraft client) {
@@ -199,8 +211,9 @@ public class EventHandler {
         }
     }
 
+    // 游戏完全退出时，恢复所有静音（包括手动）
     private static void handleGameExit() {
-        audioMute.forceRestore();
+        audioMute.forceRestoreAll();
         ConfigManager.save();
     }
 }

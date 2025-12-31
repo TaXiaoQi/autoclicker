@@ -115,6 +115,37 @@ public class MuteFeature {
         }
     }
 
+    /**
+     * 强制恢复音量（只恢复自动静音，不恢复手动静音）
+     */
+    public void forceRestore() {
+        // 如果是手动静音，不恢复
+        if (currentState == MuteState.MANUAL_MUTED) {
+            return;
+        }
+
+        // 强制清零自动功能计数
+        autoFeatureMuteCount = 0;
+
+        if (savedMasterVolume != null) {
+            restoreMasterVolume();
+        }
+        currentState = MuteState.UNMUTED;
+    }
+
+    /**
+     * 完全强制恢复（包括手动静音）- 用于游戏退出
+     */
+    public void forceRestoreAll() {
+        // 强制清零自动功能计数
+        autoFeatureMuteCount = 0;
+
+        if (savedMasterVolume != null) {
+            restoreMasterVolume();
+        }
+        currentState = MuteState.UNMUTED;
+    }
+
     private void restoreMasterVolume() {
         if (savedMasterVolume != null) {
             Options options = Minecraft.getInstance().options;
@@ -122,14 +153,6 @@ public class MuteFeature {
             options.save();
             savedMasterVolume = null;
         }
-    }
-
-    public void forceRestore() {
-        if (savedMasterVolume != null) {
-            restoreMasterVolume();
-        }
-        currentState = MuteState.UNMUTED;
-        autoFeatureMuteCount = 0;
     }
 
     public boolean isManuallyMuted() {
