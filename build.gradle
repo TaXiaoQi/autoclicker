@@ -2,6 +2,21 @@ plugins {
     id 'fabric-loom' version '1.14-SNAPSHOT' apply false
 }
 
+// 读取版本属性文件
+def loadVersionProperties() {
+    def versionFile = file('gradle/version.properties')
+    def properties = new Properties()
+    if (versionFile.exists()) {
+        versionFile.withInputStream { properties.load(it) }
+    }
+    return properties
+}
+
+def versionProps = loadVersionProperties()
+def modVersion = versionProps.getProperty('modVersion', '1.0.0')
+
+println "使用模组版本: ${modVersion}"
+
 // MC 版本对应的Fabric api
 def fabricApiVersions = [
         "1.21.1": "0.116.7+1.21.1",
@@ -16,8 +31,6 @@ def fabricApiVersions = [
         "1.21.10": "0.138.4+1.21.10",
         "1.21.11": "0.140.2+1.21.11"
 ]
-
-// def modMenuVersions = "7.2.2"
 
 // 版本分组映射
 def getVersionGroup = { mcVersion ->
@@ -40,17 +53,18 @@ subprojects {
     apply plugin: 'fabric-loom'
     apply plugin: 'maven-publish'
 
+    // 从根项目继承模组版本
+    project.version = modVersion
+    project.group = "com.example.autoclicker"
+
     def mcVersion = project.name
 
     if (!fabricApiVersions.containsKey(mcVersion)) {
         throw new GradleException("Unsupported Minecraft version: ${mcVersion}. Add it to fabricApiVersions.")
     }
 
-    version = "1.4.1"  // 模组版本
-    group = "com.example.autoclicker"
-
     // 定义用于资源处理的变量
-    def fullVersion = "${version}+${mcVersion}"
+    def fullVersion = "${modVersion}+${mcVersion}"
 
     // 获取版本组
     def versionGroup = getVersionGroup(mcVersion)
@@ -76,9 +90,12 @@ subprojects {
                 file("$rootDir/src/main/java")
         ]
         resources.srcDirs = [
-                file("$rootDir/src/version-specific/${versionGroup}/resources"),
+                // 只包含主项目的资源目录
                 file("$rootDir/src/main/resources")
         ]
+
+        // 显式设置输出目录
+        output.resourcesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
     }
 
     java {
@@ -90,7 +107,20 @@ subprojects {
         options.release = 21
     }
 
+    // 添加文件监视，当 version.properties 变化时重新处理资源
+    def versionPropertiesFile = file("$rootDir/gradle/version.properties")
+
     processResources {
+        // 监控版本属性文件的变化
+        inputs.file(versionPropertiesFile).withPropertyName("versionProperties")
+
+        inputs.property "version", fullVersion
+        inputs.property "minecraft_version", mcVersion
+        inputs.property "java_version", 21
+
+        // 添加构建时间戳，确保每次构建都不同（可选）
+        inputs.property "build_timestamp", System.currentTimeMillis()
+
         filesMatching("fabric.mod.json") {
             expand([
                     "version": fullVersion,
@@ -102,11 +132,11 @@ subprojects {
 
     tasks.named('remapJar') {
         archiveBaseName = "Autoclicker"
-        archiveVersion = "${project.version}+${mcVersion}"
+        archiveVersion = "${modVersion}+${mcVersion}"
     }
 
     def outputDir = rootProject.layout.projectDirectory.dir("dist")
-    def outputFileName = "Autoclicker-${project.version}+${mcVersion}.jar"
+    def outputFileName = "Autoclicker-${modVersion}+${mcVersion}.jar"
 
     tasks.register('copyBuild', Copy) {
         description = "Copy remapped JAR to root dist directory"
@@ -120,6 +150,18 @@ subprojects {
 
     tasks.named('build') {
         finalizedBy tasks.named('copyBuild')
+    }
+
+    // 添加一个只更新版本的任务
+    tasks.register('updateVersionResources') {
+        group = 'build'
+        description = 'Only update resources when version changes'
+
+        dependsOn processResources
+
+        doFirst {
+            println "更新版本到: ${fullVersion}"
+        }
     }
 }
 
@@ -192,4 +234,19 @@ tasks.register('cleanAll') {
     doLast {
         delete "$rootDir/dist"  // 目的文件夹
     }
+}
+
+// 添加一个只更新所有版本资源文件的任务
+tasks.register('updateAllVersions') {
+    group = 'build'
+    description = 'Update version resources for all versions'
+
+    dependsOn ':1.21.1:updateVersionResources'
+
+    project(':1.21.2').tasks.named('updateVersionResources').configure {
+        mustRunAfter ':1.21.1:updateVersionResources'
+    }
+    dependsOn ':1.21.2:updateVersionResources'
+
+    // ... 为其他所有版本添加类似的依赖链 ...
 }
