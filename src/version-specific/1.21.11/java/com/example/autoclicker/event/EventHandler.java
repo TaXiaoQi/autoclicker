@@ -42,6 +42,9 @@ public class EventHandler {
         );
     }
 
+    // 跟踪是否在游戏中
+    private static boolean wasInGame = false;
+
     private static void loadKeyBindingsFromConfig() {
         var config = ConfigManager.getConfig();
 
@@ -95,22 +98,33 @@ public class EventHandler {
         ClientPlayConnectionEvents.DISCONNECT.register(EventHandler::onDisconnect);
     }
 
-    // 断开连接时调用（离开服务器/世界时）
-    private static void onDisconnect(ClientPacketListener handler, Minecraft client) {
-        // 1. 重置自动化状态（关闭自动攻击/放置）
-        autoClick.resetAutomationOnDisconnect();
-
-        // 2. 恢复自动静音（但不恢复手动静音）
-        audioMute.forceRestore();
-    }
-
+    // 断开连接时调用
     private static void onClientTick(Minecraft client) {
+        if (wasInGame && client.player == null) {
+            handleLeaveGame();
+            wasInGame = false;
+        }
         if (client.player == null) return;
-
         handleKeyBindings();
         autoClick.tick(client);
-
         audioMute.checkUserVolumeChange();
+        wasInGame = true;
+    }
+
+    // 离开多人游戏时
+    private static void onDisconnect(ClientPacketListener handler, Minecraft client) {
+        handleLeaveGame();
+    }
+
+    // 离开单人游戏时
+    private static void handleLeaveGame() {
+        var config = ConfigManager.getConfig();
+        if (!config.autoAttackEnabled && !config.autoPlaceEnabled) {
+            // 自动化已经关闭，不需要重复处理
+            return;
+        }
+        autoClick.resetAutomationOnDisconnect();
+        audioMute.forceRestore();
     }
 
     private static void handleKeyBindings() {
