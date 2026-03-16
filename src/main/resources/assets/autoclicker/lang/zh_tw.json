@@ -56,5 +56,8 @@
   "config.mute_on_auto_place": "自動放置時靜音",
 
   "autoclicker.message.muted": "音訊已靜音",
-  "autoclicker.message.unmuted": "音訊已恢復"
+  "autoclicker.message.unmuted": "音訊已恢復",
+
+  "config.auto_refill_enabled": "自動補充",
+  "config.auto_refill_enabled.tooltip": "自動從背包補充種子和骨粉到主手/副手"
 }

@@ -204,6 +204,18 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
+        // 自动补充开关
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.auto_refill_enabled"),
+                config.autoRefillEnabled,
+                value -> {
+                    config.autoRefillEnabled = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
+
         // 随机化启用
         elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.place_randomness_enabled"),
