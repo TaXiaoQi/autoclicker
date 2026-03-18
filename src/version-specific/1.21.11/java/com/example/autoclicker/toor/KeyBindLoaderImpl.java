@@ -8,7 +8,7 @@ import net.minecraft.resources.Identifier;
 public class KeyBindLoaderImpl implements KeyBindLoader {
 
     private static final KeyMapping.Category CATEGORY =
-            KeyMapping.Category.register(Identifier.withDefaultNamespace("autoclicker/main"));  // 或者用这个
+            KeyMapping.Category.register(Identifier.fromNamespaceAndPath("autoclicker", "main"));
 
     @Override
     public KeyMapping createKeyBind(String description, InputConstants.Type type, int keyCode) {
