@@ -59,6 +59,9 @@
   "autoclicker.message.muted": "Audio muted",
   "autoclicker.message.unmuted": "Audio restored",
 
-  "config.auto_refill_enabled": "Auto Refill",
-  "config.auto_refill_enabled.tooltip": "Automatically refill seeds and bone meal from inventory to main/off hand"
+  "config.auto_refill_main_hand": "Auto Refill Main Hand",
+  "config.auto_refill_off_hand": "Auto Refill Off Hand",
+
+  "config.auto_refill_main_hand.tooltip": "Automatically refill main hand when item runs out",
+  "config.auto_refill_off_hand.tooltip": "Automatically refill off hand when item runs out"
 }

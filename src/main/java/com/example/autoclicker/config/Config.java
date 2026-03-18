@@ -26,7 +26,8 @@ public class Config {
     public boolean useBoneMeal = true;
 
     // === 自动补充配置 ===
-    public boolean autoRefillEnabled = true;
+    public boolean autoRefillMainHand = true;  // 主手补充开关
+    public boolean autoRefillOffHand = true;   // 副手补充开关
 
     // === 音频静音配置 ===
     public boolean muteOnAutoAttack = true;

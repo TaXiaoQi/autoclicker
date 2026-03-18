@@ -1,173 +1,135 @@
 package com.example.autoclicker.feature;
 
-import com.example.autoclicker.Main;
 import com.example.autoclicker.config.ConfigManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;import java.lang.reflect.Field;import java.lang.reflect.Method;
+import net.minecraft.world.item.ItemStack;
 
 public class AutoRefill {
     // 记录主手和副手的记忆物品
     private Item mainHandMemory = null;
     private Item offHandMemory = null;
 
-    // 是否启用自动补充
-    private boolean enabled = false;
 
-    // 最后一次补充时间
-    private long lastRefillTime = 0;
-    private static final long REFILL_COOLDOWN_TICKS = 5;
+    public void checkAndRefill(Minecraft client) {
+        var config = ConfigManager.getConfig();
 
-    public void tick(Minecraft client) {
-        if (!enabled || client.player == null) return;
-        if (!ConfigManager.getConfig().autoRefillEnabled) return;
+        LocalPlayer player = client.player;
+        Inventory inventory = null;
+        if (player != null) {
+            inventory = player.getInventory();
+        }
 
-        // 冷却检查
-        long currentTime = client.level != null ? client.level.getGameTime() : 0;
-        if (currentTime - lastRefillTime < REFILL_COOLDOWN_TICKS) return;
-
-        Player player = client.player;
-        Inventory inventory = player.getInventory();
-
-        boolean refilled = false;
-
-        // 检查并补充主手
-        if (mainHandMemory != null) {
-            ItemStack mainHand = player.getMainHandItem();
-            if (mainHand.isEmpty() || mainHand.getItem() != mainHandMemory) {
-                if (tryRefillFromInventory(inventory, player, true)) {
-                    refilled = true;
-                } else {
+        // 检查并补充主手（如果主手补充开启）
+        if (config.autoRefillMainHand && mainHandMemory != null) {
+            ItemStack mainHand = null;
+            if (player != null) {
+                mainHand = player.getMainHandItem();
+            }
+            if (mainHand != null && (mainHand.isEmpty() || mainHand.getItem() != mainHandMemory)) {
+                if (!tryRefillMainHand(player, inventory)) {
                     mainHandMemory = null;
                 }
             }
         }
 
-        // 检查并补充副手
-        if (offHandMemory != null) {
-            ItemStack offHand = player.getOffhandItem();
-            if (offHand.isEmpty() || offHand.getItem() != offHandMemory) {
-                if (tryRefillFromInventory(inventory, player, false)) {
-                    refilled = true;
-                } else {
+        // 检查并补充副手（如果副手补充开启）
+        if (config.autoRefillOffHand && offHandMemory != null) {
+            ItemStack offHand = null;
+            if (player != null) {
+                offHand = player.getOffhandItem();
+            }
+            if (offHand != null && (offHand.isEmpty() || offHand.getItem() != offHandMemory)) {
+                if (!tryRefillOffHand(player, inventory)) {
                     offHandMemory = null;
                 }
             }
         }
-
-        if (refilled) {
-            lastRefillTime = currentTime;
-        }
     }
 
-    // 不同版本获取主手的方法
-    private int getSelectedSlot(Inventory inventory) {
-        try {
-            // 方法1: 尝试直接访问 selected 字段 (1.21.1-1.21.4)
-            Field selectedField = Inventory.class.getDeclaredField("selected");
-            selectedField.setAccessible(true);
-            return (int) selectedField.get(inventory);
-        } catch (Exception e1) {
-            try {
-                // 方法2: 尝试 getSelected() 方法 (1.21.5+)
-                Method getSelectedMethod = Inventory.class.getMethod("getSelected");
-                return (int) getSelectedMethod.invoke(inventory);
-            } catch (Exception e2) {
-                // 方法3: 尝试 getSelectedSlot() 方法
-                try {
-                    Method getSelectedSlotMethod = Inventory.class.getMethod("getSelectedSlot");
-                    return (int) getSelectedSlotMethod.invoke(inventory);
-                } catch (Exception e3) {
-                    // 默认返回 0
-                    return 0;
-                }
-            }
-        }
-    }
+    private boolean tryRefillMainHand(LocalPlayer player, Inventory inventory) {
+        if (mainHandMemory == null) return false;
 
-    private boolean tryRefillFromInventory(Inventory inventory, Player player, boolean isMainHand) {
-        Item targetItem = isMainHand ? mainHandMemory : offHandMemory;
-        if (targetItem == null) return false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.gameMode == null) return false;
 
-        // 从背包查找物品（跳过快捷栏当前选中的槽位）
-        int startSlot = 9; // 背包槽位从9开始
-        int hotbarSlot = getSelectedSlot(player.getInventory());  // 当前选中的快捷栏槽位
+        // 查找所有槽位中匹配的物品（包括快捷栏 0-8）
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            // 跳过盔甲槽位 (36-39) 和副手槽位 (40)
+            if (i >= 36 && i <= 40) continue;
 
-        for (int i = startSlot; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);
-            if (!stack.isEmpty() && stack.getItem() == targetItem) {
-                // 找到物品，交换到手中
-                if (isMainHand) {
-                    // 交换背包物品和主手物品
-                    ItemStack currentMainHand = player.getMainHandItem().copy();
-                    inventory.setItem(hotbarSlot, stack.copy());
-                    inventory.setItem(i, currentMainHand);
-                } else {
-                    // 副手处理
-                    ItemStack currentOffHand = player.getOffhandItem().copy();
-
-                    // 设置副手为新物品 - 使用正确的setItem方法
-                    player.getInventory().setItem(Inventory.SLOT_OFFHAND, stack.copy());
-
-                    // 原副手物品放入背包空位
-                    if (!currentOffHand.isEmpty()) {
-                        for (int j = startSlot; j < inventory.getContainerSize(); j++) {
-                            if (inventory.getItem(j).isEmpty()) {
-                                inventory.setItem(j, currentOffHand);
-                                break;
-                            }
-                        }
-                    }
-
-                    // 清空原背包槽位
-                    inventory.setItem(i, ItemStack.EMPTY);
+            if (!stack.isEmpty() && stack.getItem() == mainHandMemory) {
+                if (i == inventory.selected) {
+                    return true;
                 }
+
+                // 使用原版点击事件：交换找到的物品和快捷栏选中物品
+                mc.gameMode.handleInventoryMouseClick(
+                        0,                    // 容器ID (0=玩家背包)
+                        i,                    // 找到的物品槽位
+                        inventory.selected,   // 目标快捷栏槽位 (作为按钮参数)
+                        ClickType.SWAP,       // 交换类型
+                        player
+                );
                 return true;
             }
         }
         return false;
     }
 
-    public void onAutoPlaceEnabled() {
-        enabled = true;
-        Minecraft client = Minecraft.getInstance();
-        if (client.player != null) {
-            ItemStack mainHand = client.player.getMainHandItem();
-            mainHandMemory = mainHand.isEmpty() ? null : mainHand.getItem();
+    private boolean tryRefillOffHand(LocalPlayer player, Inventory inventory) {
+        if (offHandMemory == null) return false;
 
-            ItemStack offHand = client.player.getOffhandItem();
-            offHandMemory = offHand.isEmpty() ? null : offHand.getItem();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.gameMode == null) return false;
 
-            Main.LOGGER.info("自动补充已启用");
+        // 查找所有槽位中匹配的物品（包括快捷栏 0-8）
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            // 跳过盔甲槽位 (36-39) 和副手槽位 (40)
+            if (i >= 36 && i <= 40) continue;
+
+            ItemStack stack = inventory.getItem(i);
+            if (!stack.isEmpty() && stack.getItem() == offHandMemory) {
+                // 使用原版点击事件：交换找到的物品和副手物品
+                mc.gameMode.handleInventoryMouseClick(
+                        0,                    // 容器ID (0=玩家背包)
+                        i,                    // 找到的物品槽位
+                        40,                   // 副手槽位
+                        ClickType.SWAP,       // 交换类型
+                        player
+                );
+                return true;
+            }
         }
+        return false;
     }
 
     public void onRefillSuccess() {
+        // 成功使用物品后，重新记忆当前手中的物品
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
-            ItemStack mainHand = client.player.getMainHandItem();
-            mainHandMemory = mainHand.isEmpty() ? null : mainHand.getItem();
+            var config = ConfigManager.getConfig();
 
-            ItemStack offHand = client.player.getOffhandItem();
-            offHandMemory = offHand.isEmpty() ? null : offHand.getItem();
+            // 只在对应开关开启时更新记忆
+            if (config.autoRefillMainHand) {
+                ItemStack mainHand = client.player.getMainHandItem();
+                mainHandMemory = mainHand.isEmpty() ? null : mainHand.getItem();
+            }
+
+            if (config.autoRefillOffHand) {
+                ItemStack offHand = client.player.getOffhandItem();
+                offHandMemory = offHand.isEmpty() ? null : offHand.getItem();
+            }
         }
     }
 
-    public void onAutoPlaceDisabled() {
-        enabled = false;
-        clearMemory();
-    }
-
-    public void onDisconnect() {
-        enabled = false;
-        clearMemory();
-        lastRefillTime = 0;
-    }
-
-    private void clearMemory() {
+    public void clearAllMemory() {
         mainHandMemory = null;
         offHandMemory = null;
     }
-}
+
+    }

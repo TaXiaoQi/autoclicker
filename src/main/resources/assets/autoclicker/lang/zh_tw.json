@@ -58,6 +58,9 @@
   "autoclicker.message.muted": "音訊已靜音",
   "autoclicker.message.unmuted": "音訊已恢復",
 
-  "config.auto_refill_enabled": "自動補充",
-  "config.auto_refill_enabled.tooltip": "自動從背包補充種子和骨粉到主手/副手"
+  "config.auto_refill_main_hand": "自動補充主手",
+  "config.auto_refill_off_hand": "自動補充副手",
+
+  "config.auto_refill_main_hand.tooltip": "主手物品用完時自動補充",
+  "config.auto_refill_off_hand.tooltip": "副手物品用完時自動補充"
 }

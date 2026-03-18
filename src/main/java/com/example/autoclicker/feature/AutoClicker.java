@@ -35,9 +35,6 @@ public class AutoClicker {
         if (attackCooldown > 0) attackCooldown--;
         if (placeCooldown > 0) placeCooldown--;
 
-        // 调用自动补充
-        autoRefill.tick(client);
-
         // ===== 自动攻击逻辑 =====
         if (isAutoAttackEnabled()) {
             attackTickCounter++;
@@ -46,11 +43,15 @@ public class AutoClicker {
                     attackTickCounter = 0;
                     attackCooldown = getAttackCooldown();
                     lastSuccessfulAttackTime = levelTime;
+                    // 调用自动补充
+                    autoRefill.checkAndRefill(client);
                 }
             }
         } else {
             attackTickCounter = 0;
             lastSuccessfulAttackTime = -1;
+            // 清清除放置记忆
+            autoRefill.clearAllMemory();
         }
 
         // ===== 自动放置逻辑 =====
@@ -61,11 +62,15 @@ public class AutoClicker {
                     placeTickCounter = 0;
                     placeCooldown = getPlaceCooldown();
                     lastSuccessfulPlaceTime = levelTime;
+                    // 调用自动补充
+                    autoRefill.checkAndRefill(client);
                 }
             }
         } else {
             placeTickCounter = 0;
             lastSuccessfulPlaceTime = -1;
+            // 清清除放置记忆
+            autoRefill.clearAllMemory();
         }
         checkAndDisableTimeout(levelTime);
     }
@@ -81,6 +86,8 @@ public class AutoClicker {
                 ConfigManager.save();
                 Main.sendMessage("autoclicker.message.auto_disabled_timeout",
                         Component.translatable("autoclicker.feature.attack"));
+                // 清清除放置记忆
+                autoRefill.clearAllMemory();
             }
         }
 
@@ -91,6 +98,8 @@ public class AutoClicker {
                 ConfigManager.save();
                 Main.sendMessage("autoclicker.message.auto_disabled_timeout",
                         Component.translatable("autoclicker.feature.place"));
+                // 清清除放置记忆
+                autoRefill.clearAllMemory();
             }
         }
     }
@@ -112,7 +121,7 @@ public class AutoClicker {
         config.autoPlaceEnabled = false;
 
         // 关闭自动补充
-        autoRefill.onDisconnect();
+        autoRefill.clearAllMemory();
 
         // 保存配置
         ConfigManager.save();
@@ -144,7 +153,7 @@ public class AutoClicker {
                     client.player.swing(InteractionHand.MAIN_HAND);
                     return true;
                 }
-                // 攻击中立生物（可选）
+                // 攻击中立生物
                 if (category == net.minecraft.world.entity.MobCategory.CREATURE && config.attackNeutralMobs) {
                     client.gameMode.attack(client.player, entity);
                     client.player.swing(InteractionHand.MAIN_HAND);
@@ -290,21 +299,6 @@ public class AutoClicker {
                 block == Blocks.MYCELIUM ||        // 菌丝（蘑菇）
                 block == Blocks.CLAY ||            // 黏土（海泡菜）
                 block == Blocks.GRAVEL;            // 沙砾（海草）
-    }
-
-    public void setAutoPlaceEnabled(boolean enabled) {
-        var config = ConfigManager.getConfig();
-        if (config.autoPlaceEnabled != enabled) {
-            config.autoPlaceEnabled = enabled;
-
-            if (enabled) {
-                autoRefill.onAutoPlaceEnabled(); // 开启时记忆物品
-            } else {
-                autoRefill.onAutoPlaceDisabled(); // 关闭时清空记忆
-            }
-
-            ConfigManager.save();
-        }
     }
 
     // 配置访问方法

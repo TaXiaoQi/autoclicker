@@ -204,18 +204,6 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
-        // 自动补充开关
-        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
-                Component.translatable("config.auto_refill_enabled"),
-                config.autoRefillEnabled,
-                value -> {
-                    config.autoRefillEnabled = value;
-                    updateDoneButton();
-                }
-        ));
-        scrollList.addChild(elements.getLast().getWidget());
-        yOffset += 25;
-
         // 随机化范围
         elements.add(new IntSliderElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.place_randomness_range"),
@@ -227,6 +215,31 @@ public class ConfigScreen extends Screen {
         ));
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
+
+        // === 自动补充配置 ===
+        // 主手补充开关
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.auto_refill_main_hand"),
+                config.autoRefillMainHand,
+                value -> {
+                    config.autoRefillMainHand = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
+
+        // 副手补充开关
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.auto_refill_off_hand"),
+                config.autoRefillOffHand,
+                value -> {
+                    config.autoRefillOffHand = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
 
         // === 自动静音设置 ===
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_mute"));
