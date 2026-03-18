@@ -5,20 +5,21 @@ import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.feature.AutoClicker;
 import com.example.autoclicker.feature.MuteFeature;
 import com.example.autoclicker.gui.ConfigScreen;
-import com.mojang.blaze3d.platform.InputConstants;
+import com.example.autoclicker.toor.KeyBindLoader;import com.example.autoclicker.toor.KeyBindLoaderImpl;import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 
 public class EventHandler {
     private static final AutoClicker autoClick = new AutoClicker();
     private static final MuteFeature audioMute = new MuteFeature();
+
+    // 按键加载器 - 不同版本有不同的实现
+    private static final KeyBindLoader keyBindLoader = new KeyBindLoaderImpl();
 
     // 快捷键定义
     private static KeyMapping muteKey;
@@ -26,62 +27,49 @@ public class EventHandler {
     private static KeyMapping togglePlaceKey;
     private static KeyMapping openGUIKey;
 
-    // 自定义分类
-    private static KeyMapping.Category AUTO_CLICKER_CATEGORY;
+    private static boolean wasInGame = false;
 
     public static void register() {
-        registerCustomCategory();
         loadKeyBindingsFromConfig();
         registerKeyBindings();
         registerEvents();
     }
 
-    private static void registerCustomCategory() {
-        AUTO_CLICKER_CATEGORY = KeyMapping.Category.register(
-                Identifier.fromNamespaceAndPath("autoclicker", "category")
-        );
-    }
-
-    // 跟踪是否在游戏中
-    private static boolean wasInGame = false;
-
     private static void loadKeyBindingsFromConfig() {
         var config = ConfigManager.getConfig();
 
-        muteKey = new KeyMapping(
+        // 使用加载器创建按键，不再需要手动传入分类
+        muteKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.mute",
                 InputConstants.Type.KEYSYM,
-                config.keyMute,
-                AUTO_CLICKER_CATEGORY
+                config.keyMute
         );
 
-        toggleAttackKey = new KeyMapping(
+        toggleAttackKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.toggle_attack",
                 InputConstants.Type.KEYSYM,
-                config.keyToggleAttack,
-                AUTO_CLICKER_CATEGORY
+                config.keyToggleAttack
         );
 
-        togglePlaceKey = new KeyMapping(
+        togglePlaceKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.toggle_place",
                 InputConstants.Type.KEYSYM,
-                config.keyTogglePlace,
-                AUTO_CLICKER_CATEGORY
+                config.keyTogglePlace
         );
 
-        openGUIKey = new KeyMapping(
+        openGUIKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.open_gui",
                 InputConstants.Type.KEYSYM,
-                config.keyOpenGUI,
-                AUTO_CLICKER_CATEGORY
+                config.keyOpenGUI
         );
     }
 
     private static void registerKeyBindings() {
-        KeyBindingHelper.registerKeyBinding(muteKey);
-        KeyBindingHelper.registerKeyBinding(toggleAttackKey);
-        KeyBindingHelper.registerKeyBinding(togglePlaceKey);
-        KeyBindingHelper.registerKeyBinding(openGUIKey);
+        // 使用加载器注册按键
+        keyBindLoader.registerKeyBind(muteKey);
+        keyBindLoader.registerKeyBind(toggleAttackKey);
+        keyBindLoader.registerKeyBind(togglePlaceKey);
+        keyBindLoader.registerKeyBind(openGUIKey);
     }
 
     private static void registerEvents() {
@@ -225,14 +213,13 @@ public class EventHandler {
         );
     }
 
+
     private static void handleOpenGUIKey() {
         Minecraft client = Minecraft.getInstance();
         if (client.screen == null) {
             client.setScreen(new ConfigScreen(null));
         }
     }
-
-
 
     // 游戏完全退出时，恢复所有静音（包括手动）
     private static void handleGameExit() {

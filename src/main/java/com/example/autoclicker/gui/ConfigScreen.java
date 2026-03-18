@@ -1,11 +1,10 @@
 package com.example.autoclicker.gui;
 
-import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.config.Config;
+import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.gui.elements.ConfigElement;
 import com.example.autoclicker.gui.elements.IntSliderElement;
-import com.example.autoclicker.gui.widgets.ScrollableList;
-import net.minecraft.client.Minecraft;
+import com.example.autoclicker.toor.ScrollableList;import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
@@ -20,6 +19,7 @@ public class ConfigScreen extends Screen {
     private final Screen parent;
     private final Config config;
     private final List<ConfigElement<?>> elements = new ArrayList<>();
+    private ScrollableList scrollList;
 
     private Button doneButton;
 
@@ -27,6 +27,17 @@ public class ConfigScreen extends Screen {
         super(Component.translatable("screen.autoclicker.title"));
         this.parent = parent;
         this.config = ConfigManager.getConfig();
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount, double otherAmount) {
+        if (this.scrollList != null) {
+            // 让滚动列表优先处理滚轮事件
+            if (this.scrollList.isMouseOver(mouseX, mouseY) && this.scrollList.mouseScrolled(mouseX, mouseY, amount, otherAmount)) {
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, amount, otherAmount);
     }
 
     @Override
@@ -49,14 +60,14 @@ public class ConfigScreen extends Screen {
         int listX = 0;
         int listWidth = width;
         int listHeight = height - listTopMargin - buttonHeight;
-        ScrollableList scrollList = new ScrollableList(
+        this.scrollList = new ScrollableList(
                 listX,
                 listTopMargin,
                 listWidth,
                 listHeight,
                 Component.translatable("screen.autoclicker.options")
         );
-        addRenderableWidget(scrollList);
+        addRenderableWidget(this.scrollList);
 
         scrollList.clearChildren();
         elements.clear();
@@ -247,7 +258,6 @@ public class ConfigScreen extends Screen {
         // === 自动静音设置 ===
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_mute"));
         yOffset += 25;
-
         // ✅ 使用工厂方法：最小化时静音
         elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.mute_when_minimized"),

@@ -1,5 +1,6 @@
-package com.example.autoclicker.gui.elements;
+package com.example.autoclicker.toor;
 
+import com.example.autoclicker.gui.elements.ConfigElement;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractButton;

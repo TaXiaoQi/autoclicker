@@ -1,4 +1,4 @@
-package com.example.autoclicker.gui.widgets;
+package com.example.autoclicker.toor;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
