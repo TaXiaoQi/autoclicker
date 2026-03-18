@@ -57,8 +57,5 @@
   "config.mute_on_auto_place": "Mute During Auto Place",
 
   "autoclicker.message.muted": "Audio muted",
-  "autoclicker.message.unmuted": "Audio restored",
-
-  "config.auto_refill_enabled": "Auto Refill",
-  "config.auto_refill_enabled.tooltip": "Automatically refill seeds and bone meal from inventory to main/off hand"
+  "autoclicker.message.unmuted": "Audio restored"
 }

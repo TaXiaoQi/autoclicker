@@ -8,7 +8,6 @@ public class Config {
     public int keyToggleAttack = GLFW.GLFW_KEY_F8;
     public int keyTogglePlace = GLFW.GLFW_KEY_F9;
     public int keyOpenGUI = GLFW.GLFW_KEY_F10;
-
     // === 自动攻击配置 ===
     public boolean autoAttackEnabled = false;
     public int attackInterval = 20;
@@ -24,9 +23,6 @@ public class Config {
     public int placeRandomness = 3;
     public boolean placeRandomnessEnabled = true;
     public boolean useBoneMeal = true;
-
-    // === 自动补充配置 ===
-    public boolean autoRefillEnabled = true;
 
     // === 音频静音配置 ===
     public boolean muteOnAutoAttack = true;

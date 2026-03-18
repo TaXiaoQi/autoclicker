@@ -20,8 +20,6 @@ public class AutoClicker {
     private int attackCooldown = 0;
     private int placeCooldown = 0;
 
-    private final AutoRefill autoRefill = new AutoRefill();
-
     private long lastSuccessfulAttackTime = -1;
     private long lastSuccessfulPlaceTime = -1;
 
@@ -34,9 +32,6 @@ public class AutoClicker {
         // 更新冷却计时器
         if (attackCooldown > 0) attackCooldown--;
         if (placeCooldown > 0) placeCooldown--;
-
-        // 调用自动补充
-        autoRefill.tick(client);
 
         // ===== 自动攻击逻辑 =====
         if (isAutoAttackEnabled()) {
@@ -111,9 +106,6 @@ public class AutoClicker {
         config.autoAttackEnabled = false;
         config.autoPlaceEnabled = false;
 
-        // 关闭自动补充
-        autoRefill.onDisconnect();
-
         // 保存配置
         ConfigManager.save();
     }
@@ -187,19 +179,15 @@ public class AutoClicker {
 
                     // 检查主副手是否有骨粉
                     if (mainHandItem.getItem() == Items.BONE_MEAL) {
-                        InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
+                        var result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
                         if (result.consumesAction()) {
                             client.player.swing(InteractionHand.MAIN_HAND);
-                            // 补充成功后更新记忆
-                            autoRefill.onRefillSuccess();
                             return true;
                         }
                     } else if (offHandItem.getItem() == Items.BONE_MEAL) {
-                        InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
+                        var result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
                         if (result.consumesAction()) {
                             client.player.swing(InteractionHand.OFF_HAND);
-                            // 补充成功后更新记忆
-                            autoRefill.onRefillSuccess();
                             return true;
                         }
                     }
@@ -223,14 +211,13 @@ public class AutoClicker {
 
             // 检查瞄准的方块是否为种植土
             if (state != null && isPlantableSoil(state.getBlock())) {
+                InteractionResult result = null;
                 if (hand != null) {
-                    InteractionResult result = client.gameMode.useItemOn(client.player, hand, blockHit);
-                    if (result.consumesAction()) {
-                        client.player.swing(hand);
-                        // 补充成功后更新记忆
-                        autoRefill.onRefillSuccess();
-                        return true;
-                    }
+                    result = client.gameMode.useItemOn(client.player, hand, blockHit);
+                }
+                if (result != null && result.consumesAction()) {
+                    client.player.swing(hand);
+                    return true;
                 }
             }
 
@@ -290,21 +277,6 @@ public class AutoClicker {
                 block == Blocks.MYCELIUM ||        // 菌丝（蘑菇）
                 block == Blocks.CLAY ||            // 黏土（海泡菜）
                 block == Blocks.GRAVEL;            // 沙砾（海草）
-    }
-
-    public void setAutoPlaceEnabled(boolean enabled) {
-        var config = ConfigManager.getConfig();
-        if (config.autoPlaceEnabled != enabled) {
-            config.autoPlaceEnabled = enabled;
-
-            if (enabled) {
-                autoRefill.onAutoPlaceEnabled(); // 开启时记忆物品
-            } else {
-                autoRefill.onAutoPlaceDisabled(); // 关闭时清空记忆
-            }
-
-            ConfigManager.save();
-        }
     }
 
     // 配置访问方法
