@@ -228,7 +228,10 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 30;
 
-        // === 自动补充配置 ===
+        // === 自动补充设置 ===
+        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_refill"));
+        yOffset += 25;
+
         // 主手补充开关
         elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.auto_refill_main_hand"),

@@ -62,6 +62,7 @@
   "config.auto_refill_main_hand": "Auto Refill Main Hand",
   "config.auto_refill_off_hand": "Auto Refill Off Hand",
 
+  "config.auto_refill.title": "Auto Refill Settings",
   "config.auto_refill_main_hand.tooltip": "Automatically refill main hand when item runs out",
   "config.auto_refill_off_hand.tooltip": "Automatically refill off hand when item runs out"
 }

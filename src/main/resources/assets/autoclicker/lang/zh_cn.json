@@ -61,6 +61,7 @@
   "config.auto_refill_main_hand": "自动补充主手",
   "config.auto_refill_off_hand": "自动补充副手",
 
+  "config.section.auto_refill": "自动补充设置",
   "config.auto_refill_main_hand.tooltip": "主手物品用完时自动补充",
   "config.auto_refill_off_hand.tooltip": "副手物品用完时自动补充"
 

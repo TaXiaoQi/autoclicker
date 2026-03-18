@@ -1,12 +1,12 @@
 package com.example.autoclicker.feature;
 
-import com.example.autoclicker.config.ConfigManager;
+import com.example.autoclicker.Main;import com.example.autoclicker.config.ConfigManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStack;import java.lang.reflect.Field;import java.lang.reflect.Method;
 
 public class AutoRefill {
     // 记录主手和副手的记忆物品
@@ -50,29 +50,52 @@ public class AutoRefill {
         }
     }
 
+    // 获取当前选中的快捷栏槽位（适配不同版本）
+    private int getSelectedSlot(Inventory inventory) {
+        // 先尝试通过反射获取（兼容1.21.1-1.21.4）
+        try {
+            Field selectedField = Inventory.class.getDeclaredField("selected");
+            selectedField.setAccessible(true);
+            return selectedField.getInt(inventory);
+        } catch (Exception e) {
+            Main.LOGGER.debug("Reflection failed, trying getter method", e);
+        }
+
+        try {
+            // 使用反射调用getSelectedSlot方法
+            Method getterMethod = Inventory.class.getMethod("getSelectedSlot");
+            return (int) getterMethod.invoke(inventory);
+        } catch (Exception e) {
+            Main.LOGGER.error("All methods to get selected slot failed", e);
+            return 0; // 默认返回第一个槽位
+        }
+    }
+
     private boolean tryRefillMainHand(LocalPlayer player, Inventory inventory) {
-        if (mainHandMemory == null) return false;
+        if (mainHandMemory == null || player == null) return false;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.gameMode == null) return false;
 
-        // 查找所有槽位中匹配的物品（包括快捷栏 0-8）
+        // 使用适配方法获取选中的快捷栏槽位
+        int selectedSlot = getSelectedSlot( inventory);
+
+        // 查找所有槽位中匹配的物品
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             // 跳过盔甲槽位 (36-39) 和副手槽位 (40)
             if (i >= 36 && i <= 40) continue;
 
             ItemStack stack = inventory.getItem(i);
             if (!stack.isEmpty() && stack.getItem() == mainHandMemory) {
-                if (i == inventory.selected) {
+                if (i == selectedSlot) {
                     return true;
                 }
 
-                // 使用原版点击事件：交换找到的物品和快捷栏选中物品
                 mc.gameMode.handleInventoryMouseClick(
-                        0,                    // 容器ID (0=玩家背包)
-                        i,                    // 找到的物品槽位
-                        inventory.selected,   // 目标快捷栏槽位 (作为按钮参数)
-                        ClickType.SWAP,       // 交换类型
+                        0,
+                        i,
+                        selectedSlot,
+                        ClickType.SWAP,
                         player
                 );
                 return true;
@@ -82,24 +105,22 @@ public class AutoRefill {
     }
 
     private boolean tryRefillOffHand(LocalPlayer player, Inventory inventory) {
-        if (offHandMemory == null) return false;
+        if (offHandMemory == null || player == null) return false;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.gameMode == null) return false;
 
-        // 查找所有槽位中匹配的物品（包括快捷栏 0-8）
+        // 查找所有槽位中匹配的物品
         for (int i = 0; i < inventory.getContainerSize(); i++) {
-            // 跳过盔甲槽位 (36-39) 和副手槽位 (40)
             if (i >= 36 && i <= 40) continue;
 
             ItemStack stack = inventory.getItem(i);
             if (!stack.isEmpty() && stack.getItem() == offHandMemory) {
-                // 使用原版点击事件：交换找到的物品和副手物品
                 mc.gameMode.handleInventoryMouseClick(
-                        0,                    // 容器ID (0=玩家背包)
-                        i,                    // 找到的物品槽位
-                        40,                   // 副手槽位
-                        ClickType.SWAP,       // 交换类型
+                        0,
+                        i,
+                        40,
+                        ClickType.SWAP,
                         player
                 );
                 return true;
@@ -109,12 +130,10 @@ public class AutoRefill {
     }
 
     public void onRefillSuccess() {
-        // 成功使用物品后，重新记忆当前手中的物品
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
             var config = ConfigManager.getConfig();
 
-            // 只在对应开关开启时更新记忆
             if (config.autoRefillMainHand) {
                 ItemStack mainHand = client.player.getMainHandItem();
                 mainHandMemory = mainHand.isEmpty() ? null : mainHand.getItem();
@@ -131,5 +150,4 @@ public class AutoRefill {
         mainHandMemory = null;
         offHandMemory = null;
     }
-
-    }
+}
