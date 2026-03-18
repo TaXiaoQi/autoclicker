@@ -248,10 +248,6 @@ public class ConfigScreen extends Screen {
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_mute"));
         yOffset += 25;
 
-        // === 自动静音设置 ===
-        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_mute"));
-        yOffset += 25;
-
         // ✅ 使用工厂方法：最小化时静音
         elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
                 Component.translatable("config.mute_when_minimized"),
