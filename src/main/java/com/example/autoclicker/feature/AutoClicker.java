@@ -25,6 +25,10 @@ public class AutoClicker {
     private long lastSuccessfulAttackTime = -1;
     private long lastSuccessfulPlaceTime = -1;
 
+    // 记录功能启动时间
+    private long attackStartTime = -1;
+    private long placeStartTime = -1;
+
     private boolean memoryInitialized = false;
 
     public void tick(Minecraft client) {
@@ -43,12 +47,19 @@ public class AutoClicker {
 
         // ===== 自动攻击逻辑 =====
         if (isAutoAttackEnabled()) {
+            // 新增：如果刚刚开启功能，记录启动时间
+            if (attackStartTime == -1) {
+                attackStartTime = levelTime;
+                Main.LOGGER.debug("自动攻击启动，开始计时，启动时刻：{}", attackStartTime);
+            }
+
             attackTickCounter++;
             if (attackTickCounter >= getAttackInterval() && attackCooldown <= 0) {
                 if (performAttack(client)) {
                     attackTickCounter = 0;
                     attackCooldown = getAttackCooldown();
                     lastSuccessfulAttackTime = levelTime;
+                    Main.LOGGER.debug("攻击成功，更新时间戳：{}", lastSuccessfulAttackTime);
                     // 调用自动补充
                     autoRefill.checkAndRefill(client);
                 }
@@ -56,18 +67,26 @@ public class AutoClicker {
         } else {
             attackTickCounter = 0;
             lastSuccessfulAttackTime = -1;
-            // 清清除放置记忆
+            attackStartTime = -1; // 重置启动时间
+            // 清除放置记忆
             autoRefill.clearAllMemory();
         }
 
         // ===== 自动放置逻辑 =====
         if (isAutoPlaceEnabled()) {
+            // 新增：如果刚刚开启功能，记录启动时间
+            if (placeStartTime == -1) {
+                placeStartTime = levelTime;
+                Main.LOGGER.debug("自动放置启动，开始计时，启动时刻：{}", placeStartTime);
+            }
+
             placeTickCounter++;
             if (placeTickCounter >= getPlaceInterval() && placeCooldown <= 0) {
                 if (performAutoPlace(client)) {
                     placeTickCounter = 0;
                     placeCooldown = getPlaceCooldown();
                     lastSuccessfulPlaceTime = levelTime;
+                    Main.LOGGER.debug("放置成功，更新时间戳：{}", lastSuccessfulPlaceTime);
                     // 调用自动补充
                     autoRefill.checkAndRefill(client);
                 }
@@ -75,7 +94,8 @@ public class AutoClicker {
         } else {
             placeTickCounter = 0;
             lastSuccessfulPlaceTime = -1;
-            // 清清除放置记忆
+            placeStartTime = -1; // 重置启动时间
+            // 清除放置记忆
             autoRefill.clearAllMemory();
         }
         checkAndDisableTimeout(levelTime);
@@ -99,35 +119,44 @@ public class AutoClicker {
         long timeoutTicks = config.autoDisableTimeout * 20L;
 
         // 检查自动攻击超时（如果开启了自动关闭功能）
-        if (config.autoAttackEnabled && config.autoDisableAttack && lastSuccessfulAttackTime != -1) {
-            if (currentTime - lastSuccessfulAttackTime >= timeoutTicks) {
+        if (config.autoAttackEnabled && config.autoDisableAttack) {
+            // 修改：使用启动时间作为基准，如果成功攻击过则使用成功时间
+            long referenceTime = (lastSuccessfulAttackTime != -1) ? lastSuccessfulAttackTime : attackStartTime;
+
+            if (referenceTime != -1 && currentTime - referenceTime >= timeoutTicks) {
                 config.autoAttackEnabled = false;
                 ConfigManager.save();
                 Main.sendMessage("autoclicker.message.auto_disabled_timeout",
                         Component.translatable("autoclicker.feature.attack"),
                         config.autoDisableTimeout);
                 // 重置状态
+                attackStartTime = -1;
+                lastSuccessfulAttackTime = -1;
                 memoryInitialized = false;
                 Main.LOGGER.info("自动攻击已超时关闭（{}秒无操作）", config.autoDisableTimeout);
             }
         }
 
         // 检查自动放置超时（如果开启了自动关闭功能）
-        if (config.autoPlaceEnabled && config.autoDisablePlace && lastSuccessfulPlaceTime != -1) {
-            if (currentTime - lastSuccessfulPlaceTime >= timeoutTicks) {
+        if (config.autoPlaceEnabled && config.autoDisablePlace) {
+            // 修改：使用启动时间作为基准，如果成功放置过则使用成功时间
+            long referenceTime = (lastSuccessfulPlaceTime != -1) ? lastSuccessfulPlaceTime : placeStartTime;
+
+            if (referenceTime != -1 && currentTime - referenceTime >= timeoutTicks) {
                 config.autoPlaceEnabled = false;
                 ConfigManager.save();
                 Main.sendMessage("autoclicker.message.auto_disabled_timeout",
                         Component.translatable("autoclicker.feature.place"),
                         config.autoDisableTimeout);
                 // 重置状态
+                placeStartTime = -1;
+                lastSuccessfulPlaceTime = -1;
                 memoryInitialized = false;
                 Main.LOGGER.info("自动放置已超时关闭（{}秒无操作）", config.autoDisableTimeout);
             }
         }
     }
 
-    // 修改resetAutomationOnDisconnect方法
     public void resetAutomationOnDisconnect() {
         var config = ConfigManager.getConfig();
 
@@ -138,6 +167,10 @@ public class AutoClicker {
         placeCooldown = 0;
         lastSuccessfulAttackTime = -1;
         lastSuccessfulPlaceTime = -1;
+
+        // 新增：重置启动时间
+        attackStartTime = -1;
+        placeStartTime = -1;
 
         // 重置初始化标记
         memoryInitialized = false;
