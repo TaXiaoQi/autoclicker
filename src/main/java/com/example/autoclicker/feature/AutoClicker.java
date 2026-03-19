@@ -103,11 +103,8 @@ public class AutoClicker {
 
     private void initMemory() {
         var config = ConfigManager.getConfig();
-
         if (config.autoRefillMainHand || config.autoRefillOffHand) {
-            // 调用AutoRefill的onRefillSuccess来记录当前物品
-            autoRefill.onRefillSuccess();
-
+            autoRefill.checkAndRefill(Minecraft.getInstance());  // 触发初始化
             Main.LOGGER.info("自动补货记忆已初始化");
         }
     }
@@ -258,16 +255,12 @@ public class AutoClicker {
                         InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
                         if (result.consumesAction()) {
                             client.player.swing(InteractionHand.MAIN_HAND);
-                            // 补充成功后更新记忆
-                            autoRefill.onRefillSuccess();
                             return true;
                         }
                     } else if (offHandItem.getItem() == Items.BONE_MEAL) {
                         InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
                         if (result.consumesAction()) {
                             client.player.swing(InteractionHand.OFF_HAND);
-                            // 补充成功后更新记忆
-                            autoRefill.onRefillSuccess();
                             return true;
                         }
                     }
@@ -295,8 +288,6 @@ public class AutoClicker {
                     InteractionResult result = client.gameMode.useItemOn(client.player, hand, blockHit);
                     if (result.consumesAction()) {
                         client.player.swing(hand);
-                        // 补充成功后更新记忆
-                        autoRefill.onRefillSuccess();
                         return true;
                     }
                 }
