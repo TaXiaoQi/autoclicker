@@ -29,6 +29,11 @@ public class Config {
     public boolean autoRefillMainHand = true;  // 主手补充开关
     public boolean autoRefillOffHand = true;   // 副手补充开关
 
+    // 自动关闭功能开关
+    public boolean autoDisableAttack = true;  // 自动攻击超时关闭
+    public boolean autoDisablePlace = true;   // 自动放置超时关闭
+    public int autoDisableTimeout = 120;       // 超时时间（秒），范围1-240秒，默认120秒
+
     // === 音频静音配置 ===
     public boolean muteOnAutoAttack = true;
     public boolean muteOnAutoPlace = true;

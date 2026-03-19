@@ -255,6 +255,49 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
+        // === 自动关闭设置（新增） ===
+        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_disable"));
+        yOffset += 25;
+
+        // 自动攻击超时关闭开关
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.auto_disable_attack"),
+                config.autoDisableAttack,
+                value -> {
+                    config.autoDisableAttack = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
+
+        // 自动放置超时关闭开关
+        elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.auto_disable_place"),
+                config.autoDisablePlace,
+                value -> {
+                    config.autoDisablePlace = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 25;
+
+        // 超时时间滑块（1-240秒）
+        elements.add(new IntSliderElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.auto_disable_timeout"),
+                1, 240, config.autoDisableTimeout,
+                value -> {
+                    config.autoDisableTimeout = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 30;
+
+        // === 自动静音设置 ===
+        addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_mute"));
+        yOffset += 25;
 
         // ✅ 使用工厂方法：最小化时静音
         elements.add(GuiFactory.createBooleanElement(0, yOffset, elementWidth, 20,

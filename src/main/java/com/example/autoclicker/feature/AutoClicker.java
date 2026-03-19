@@ -25,10 +25,16 @@ public class AutoClicker {
     private long lastSuccessfulAttackTime = -1;
     private long lastSuccessfulPlaceTime = -1;
 
-    private static final long TIMEOUT_TICKS = 2400L; // 120秒
+    private boolean memoryInitialized = false;
 
     public void tick(Minecraft client) {
         if (client.player == null || client.level == null) return;
+
+        // 首次运行或切换世界时初始化记忆
+        if (!memoryInitialized) {
+            initMemory();
+            memoryInitialized = true;
+        }
 
         var levelTime = client.level.getGameTime(); // 获取当前游戏刻
         // 更新冷却计时器
@@ -75,36 +81,53 @@ public class AutoClicker {
         checkAndDisableTimeout(levelTime);
     }
 
-    // ===== 超时检测 =====
+    private void initMemory() {
+        var config = ConfigManager.getConfig();
+
+        if (config.autoRefillMainHand || config.autoRefillOffHand) {
+            // 调用AutoRefill的onRefillSuccess来记录当前物品
+            autoRefill.onRefillSuccess();
+
+            Main.LOGGER.info("自动补货记忆已初始化");
+        }
+    }
+
     private void checkAndDisableTimeout(long currentTime) {
         var config = ConfigManager.getConfig();
 
-        // 检查自动攻击超时
-        if (config.autoAttackEnabled && lastSuccessfulAttackTime != -1) {
-            if (currentTime - lastSuccessfulAttackTime >= TIMEOUT_TICKS) {
+        // 计算超时刻数（将秒转换为游戏刻，20刻=1秒）
+        long timeoutTicks = config.autoDisableTimeout * 20L;
+
+        // 检查自动攻击超时（如果开启了自动关闭功能）
+        if (config.autoAttackEnabled && config.autoDisableAttack && lastSuccessfulAttackTime != -1) {
+            if (currentTime - lastSuccessfulAttackTime >= timeoutTicks) {
                 config.autoAttackEnabled = false;
                 ConfigManager.save();
                 Main.sendMessage("autoclicker.message.auto_disabled_timeout",
-                        Component.translatable("autoclicker.feature.attack"));
-                // 清清除放置记忆
-                autoRefill.clearAllMemory();
+                        Component.translatable("autoclicker.feature.attack"),
+                        config.autoDisableTimeout);
+                // 重置状态
+                memoryInitialized = false;
+                Main.LOGGER.info("自动攻击已超时关闭（{}秒无操作）", config.autoDisableTimeout);
             }
         }
 
-        // 检查自动放置超时
-        if (config.autoPlaceEnabled && lastSuccessfulPlaceTime != -1) {
-            if (currentTime - lastSuccessfulPlaceTime >= TIMEOUT_TICKS) {
+        // 检查自动放置超时（如果开启了自动关闭功能）
+        if (config.autoPlaceEnabled && config.autoDisablePlace && lastSuccessfulPlaceTime != -1) {
+            if (currentTime - lastSuccessfulPlaceTime >= timeoutTicks) {
                 config.autoPlaceEnabled = false;
                 ConfigManager.save();
                 Main.sendMessage("autoclicker.message.auto_disabled_timeout",
-                        Component.translatable("autoclicker.feature.place"));
-                // 清清除放置记忆
-                autoRefill.clearAllMemory();
+                        Component.translatable("autoclicker.feature.place"),
+                        config.autoDisableTimeout);
+                // 重置状态
+                memoryInitialized = false;
+                Main.LOGGER.info("自动放置已超时关闭（{}秒无操作）", config.autoDisableTimeout);
             }
         }
     }
 
-    // 断开连接时重置自动化状态
+    // 修改resetAutomationOnDisconnect方法
     public void resetAutomationOnDisconnect() {
         var config = ConfigManager.getConfig();
 
@@ -116,11 +139,14 @@ public class AutoClicker {
         lastSuccessfulAttackTime = -1;
         lastSuccessfulPlaceTime = -1;
 
+        // 重置初始化标记
+        memoryInitialized = false;
+
         // 关闭自动化功能
         config.autoAttackEnabled = false;
         config.autoPlaceEnabled = false;
 
-        // 关闭自动补充
+        // 关闭自动补充（清除记忆）
         autoRefill.clearAllMemory();
 
         // 保存配置

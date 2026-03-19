@@ -51,5 +51,7 @@ public class ConfigManager {
         if (cfg.placeInterval < 1) cfg.placeInterval = 10;
         if (cfg.attackRandomness < 0) cfg.attackRandomness = 0;
         if (cfg.placeRandomness < 0) cfg.placeRandomness = 0;
+        if (cfg.autoDisableTimeout < 1) cfg.autoDisableTimeout = 1;
+        if (cfg.autoDisableTimeout > 240) cfg.autoDisableTimeout = 240;
     }
 }

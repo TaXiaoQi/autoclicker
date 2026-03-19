@@ -1,24 +1,24 @@
 {
-  "key.category.autoclicker.main": "AutoClicker",
-  "key.category.autoclicker.category": "AutoClicker",
-  "key.categories.autoclicker": "AutoClicker",
-  "key.category.autoclicker": "AutoClicker",
+  "key.category.autoclicker.main": "Auto Clicker",
+  "key.category.autoclicker.category": "Auto Clicker",
+  "key.categories.autoclicker": "Auto Clicker",
+  "key.category.autoclicker": "Auto Clicker",
 
   "key.autoclicker.mute": "Toggle Mute",
   "key.autoclicker.toggle_attack": "Toggle Auto Attack",
   "key.autoclicker.toggle_place": "Toggle Auto Place",
-  "key.autoclicker.open_gui": "Open Config GUI",
+  "key.autoclicker.open_gui": "Open Config Screen",
 
-  "mod.autoclicker.name": "Autoclicker",
-  "modmenu.descriptionTranslation.autoclicker": "A mod for auto-attacking and auto-planting.",
+  "mod.autoclicker.name": "Auto Clicker",
+  "modmenu.descriptionTranslation.autoclicker": "A mod that implements Auto Attack | Auto Planting",
   "screen.autoclicker.title": "Auto Clicker Settings",
   "screen.autoclicker.options": "Options",
 
   "config.section.attack": "Auto Attack Settings",
   "config.auto_attack_enabled": "Enable Auto Attack",
   "config.attack_interval": "Attack Interval (ticks)",
-  "config.attack_randomness_enabled": "Enable Random Attack Delay",
-  "config.attack_randomness_range": "Random Attack Delay Range (ticks)",
+  "config.attack_randomness_enabled": "Enable Attack Random Delay",
+  "config.attack_randomness_range": "Attack Random Delay Range (ticks)",
 
   "config.attack_targets": "Attack Targets",
   "config.attack_armor_stands": "Attack Armor Stands",
@@ -28,41 +28,48 @@
   "config.section.place": "Auto Place Settings",
   "config.auto_place_enabled": "Enable Auto Place",
   "config.place_interval": "Place Interval (ticks)",
-  "config.use_bone_meal": "Use Bone Meal Automatically",
-  "config.place_randomness_enabled": "Enable Random Place Delay",
-  "config.place_randomness_range": "Random Place Delay Range (ticks)",
+  "config.use_bone_meal": "Use Bone Meal When Auto Placing",
+  "config.place_randomness_enabled": "Enable Place Random Delay",
+  "config.place_randomness_range": "Place Random Delay Range (ticks)",
 
   "config.section.anti_detection": "Anti-Detection Settings",
-  "config.humanize_clicks": "Randomly Skip Placements (Human-like Simulation)",
+  "config.humanize_clicks": "Randomly Miss Placements (Human-like)",
 
   "gui.autoclicker.enabled": "Enabled",
   "gui.autoclicker.disabled": "Disabled",
 
-  "autoclicker.message.attack_toggle": "Auto-attack %s (%s ticks)",
-  "autoclicker.message.place_toggle": "Auto-place %s (%s ticks, bone meal: %s)",
-  "autoclicker.message.auto_disabled_timeout": "Auto %s disabled due to inactivity (>60 seconds)",
+  "autoclicker.message.attack_toggle": "Auto Attack %s (Interval: %s ticks)",
+  "autoclicker.message.place_toggle": "Auto Place %s (Interval: %s ticks, Bone Meal: %s)",
+  "autoclicker.message.auto_disabled_timeout": "Auto %s disabled due to prolonged inactivity",
 
   "autoclicker.feature.attack": "Attack",
   "autoclicker.feature.place": "Place",
 
   "autoclicker.bonemeal.included": "Enabled",
   "autoclicker.bonemeal.excluded": "Disabled",
-
   "gui.cancel": "Cancel",
   "gui.done": "Done",
 
   "config.section.auto_mute": "Auto Mute Settings",
-  "config.mute_when_minimized": "Mute When Minimized",
+  "config.mute_when_minimized": "Mute When Window Minimized",
   "config.mute_on_auto_attack": "Mute During Auto Attack",
   "config.mute_on_auto_place": "Mute During Auto Place",
 
-  "autoclicker.message.muted": "Audio muted",
-  "autoclicker.message.unmuted": "Audio restored",
+  "autoclicker.message.muted": "Audio Muted",
+  "autoclicker.message.unmuted": "Audio Restored",
 
   "config.auto_refill_main_hand": "Auto Refill Main Hand",
   "config.auto_refill_off_hand": "Auto Refill Off Hand",
 
-  "config.auto_refill.title": "Auto Refill Settings",
-  "config.auto_refill_main_hand.tooltip": "Automatically refill main hand when item runs out",
-  "config.auto_refill_off_hand.tooltip": "Automatically refill off hand when item runs out"
+  "config.section.auto_refill": "Auto Refill Settings",
+  "config.auto_refill_main_hand.tooltip": "Automatically refill main hand when item is used up",
+  "config.auto_refill_off_hand.tooltip": "Automatically refill off hand when item is used up",
+
+  "config.section.auto_disable": "Auto Disable Settings",
+  "config.auto_disable_attack": "Auto Disable Attack on Timeout",
+  "config.auto_disable_attack.tooltip": "Automatically disable auto attack after no operation for set time",
+  "config.auto_disable_place": "Auto Disable Place on Timeout",
+  "config.auto_disable_place.tooltip": "Automatically disable auto place after no operation for set time",
+  "config.auto_disable_timeout": "Timeout (seconds)",
+  "config.auto_disable_timeout.tooltip": "Time in seconds before auto disable\nRange: 1-240 seconds"
 }

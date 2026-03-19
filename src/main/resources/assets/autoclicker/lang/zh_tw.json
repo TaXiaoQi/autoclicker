@@ -15,7 +15,7 @@
   "screen.autoclicker.options": "選項",
 
   "config.section.attack": "自動攻擊設定",
-  "config.auto_attack_enabled": "啟動自動攻擊",
+  "config.auto_attack_enabled": "啟用自動攻擊",
   "config.attack_interval": "攻擊間隔（刻）",
   "config.attack_randomness_enabled": "啟用攻擊隨機延遲",
   "config.attack_randomness_range": "攻擊隨機延遲範圍（刻）",
@@ -32,11 +32,11 @@
   "config.place_randomness_enabled": "啟用放置隨機延遲",
   "config.place_randomness_range": "放置隨機延遲範圍（刻）",
 
-  "config.section.anti_detection": "反偵測設定",
+  "config.section.anti_detection": "反檢測設定",
   "config.humanize_clicks": "隨機漏放置（模擬真人）",
 
   "gui.autoclicker.enabled": "已啟用",
-  "gui.autoclicker.disabled": "已禁用",
+  "gui.autoclicker.disabled": "已停用",
 
   "autoclicker.message.attack_toggle": "自動攻擊%s（間隔：%s 遊戲刻）",
   "autoclicker.message.place_toggle": "自動放置%s（間隔：%s 遊戲刻，骨粉：%s）",
@@ -46,7 +46,7 @@
   "autoclicker.feature.place": "放置",
 
   "autoclicker.bonemeal.included": "啟用",
-  "autoclicker.bonemeal.excluded": "禁用",
+  "autoclicker.bonemeal.excluded": "停用",
   "gui.cancel": "取消",
   "gui.done": "完成",
 
@@ -61,7 +61,15 @@
   "config.auto_refill_main_hand": "自動補充主手",
   "config.auto_refill_off_hand": "自動補充副手",
 
-  "config.auto_refill.title": "自動補充設定",
+  "config.section.auto_refill": "自動補充設定",
   "config.auto_refill_main_hand.tooltip": "主手物品用完時自動補充",
-  "config.auto_refill_off_hand.tooltip": "副手物品用完時自動補充"
+  "config.auto_refill_off_hand.tooltip": "副手物品用完時自動補充",
+
+  "config.section.auto_disable": "自動關閉設定",
+  "config.auto_disable_attack": "自動攻擊超時關閉",
+  "config.auto_disable_attack.tooltip": "無攻擊操作超過設定時間後自動關閉自動攻擊",
+  "config.auto_disable_place": "自動放置超時關閉",
+  "config.auto_disable_place.tooltip": "無放置操作超過設定時間後自動關閉自動放置",
+  "config.auto_disable_timeout": "超時時間（秒）",
+  "config.auto_disable_timeout.tooltip": "設定無操作多少秒後自動關閉功能\n範圍：1-240秒"
 }
