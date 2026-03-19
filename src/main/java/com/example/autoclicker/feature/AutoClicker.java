@@ -40,14 +40,15 @@ public class AutoClicker {
             memoryInitialized = true;
         }
 
-        var levelTime = client.level.getGameTime(); // 获取当前游戏刻
+        // 获取当前游戏刻
+        var levelTime = client.level.getGameTime();
+
         // 更新冷却计时器
         if (attackCooldown > 0) attackCooldown--;
         if (placeCooldown > 0) placeCooldown--;
 
         // ===== 自动攻击逻辑 =====
         if (isAutoAttackEnabled()) {
-            // 新增：如果刚刚开启功能，记录启动时间
             if (attackStartTime == -1) {
                 attackStartTime = levelTime;
                 Main.LOGGER.debug("自动攻击启动，开始计时，启动时刻：{}", attackStartTime);
@@ -60,21 +61,22 @@ public class AutoClicker {
                     attackCooldown = getAttackCooldown();
                     lastSuccessfulAttackTime = levelTime;
                     Main.LOGGER.debug("攻击成功，更新时间戳：{}", lastSuccessfulAttackTime);
-                    // 调用自动补充
-                    autoRefill.checkAndRefill(client);
+
+                    // 调用攻击专用的自动补充
+                    autoRefill.onAttackUsed();  // 先更新记忆
+                    autoRefill.checkAndRefillForAttack(client);
                 }
             }
         } else {
             attackTickCounter = 0;
             lastSuccessfulAttackTime = -1;
-            attackStartTime = -1; // 重置启动时间
-            // 清除放置记忆
-            autoRefill.clearAllMemory();
+            attackStartTime = -1;
+            // 只清除攻击功能的记忆
+            autoRefill.clearAttackMemory();
         }
 
         // ===== 自动放置逻辑 =====
         if (isAutoPlaceEnabled()) {
-            // 新增：如果刚刚开启功能，记录启动时间
             if (placeStartTime == -1) {
                 placeStartTime = levelTime;
                 Main.LOGGER.debug("自动放置启动，开始计时，启动时刻：{}", placeStartTime);
@@ -87,24 +89,35 @@ public class AutoClicker {
                     placeCooldown = getPlaceCooldown();
                     lastSuccessfulPlaceTime = levelTime;
                     Main.LOGGER.debug("放置成功，更新时间戳：{}", lastSuccessfulPlaceTime);
-                    // 调用自动补充
-                    autoRefill.checkAndRefill(client);
+
+                    // 调用放置专用的自动补充
+                    autoRefill.onPlaceUsed();  // 先更新记忆
+                    autoRefill.checkAndRefillForPlace(client);
                 }
             }
         } else {
             placeTickCounter = 0;
             lastSuccessfulPlaceTime = -1;
-            placeStartTime = -1; // 重置启动时间
-            // 清除放置记忆
-            autoRefill.clearAllMemory();
+            placeStartTime = -1;
+            // 只清除放置功能的记忆
+            autoRefill.clearPlaceMemory();
         }
+
+        // 添加超时检测
         checkAndDisableTimeout(levelTime);
     }
 
     private void initMemory() {
         var config = ConfigManager.getConfig();
+
         if (config.autoRefillMainHand || config.autoRefillOffHand) {
-            autoRefill.checkAndRefill(Minecraft.getInstance());  // 触发初始化
+            // 分别初始化两个功能的记忆
+            if (config.autoAttackEnabled) {
+                autoRefill.checkAndRefillForAttack(Minecraft.getInstance());
+            }
+            if (config.autoPlaceEnabled) {
+                autoRefill.checkAndRefillForPlace(Minecraft.getInstance());
+            }
             Main.LOGGER.info("自动补货记忆已初始化");
         }
     }
@@ -176,8 +189,9 @@ public class AutoClicker {
         config.autoAttackEnabled = false;
         config.autoPlaceEnabled = false;
 
-        // 关闭自动补充（清除记忆）
-        autoRefill.clearAllMemory();
+        // 分别清除攻击和放置功能的记忆
+        autoRefill.clearAttackMemory();
+        autoRefill.clearPlaceMemory();
 
         // 保存配置
         ConfigManager.save();

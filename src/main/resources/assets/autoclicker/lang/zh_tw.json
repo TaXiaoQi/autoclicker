@@ -64,6 +64,8 @@
   "config.section.auto_refill": "自動補充設定",
   "config.auto_refill_main_hand.tooltip": "主手物品用完時自動補充",
   "config.auto_refill_off_hand.tooltip": "副手物品用完時自動補充",
+  "config.refill_count_threshold": "數量低於 (0-63)",
+  "config.refill_durability_threshold": "耐久低於 (%)",
 
   "config.section.auto_disable": "自動關閉設定",
   "config.auto_disable_attack": "自動攻擊超時關閉",

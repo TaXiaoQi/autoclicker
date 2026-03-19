@@ -64,6 +64,8 @@
   "config.section.auto_refill": "Auto Refill Settings",
   "config.auto_refill_main_hand.tooltip": "Automatically refill main hand when item is used up",
   "config.auto_refill_off_hand.tooltip": "Automatically refill off hand when item is used up",
+  "config.refill_count_threshold": "Refill when count below (0-63)",
+  "config.refill_durability_threshold": "Refill when durability below (%)",
 
   "config.section.auto_disable": "Auto Disable Settings",
   "config.auto_disable_attack": "Auto Disable Attack on Timeout",

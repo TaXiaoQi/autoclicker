@@ -28,6 +28,9 @@ public class Config {
     // === 自动补充配置 ===
     public boolean autoRefillMainHand = true;  // 主手补充开关
     public boolean autoRefillOffHand = true;   // 副手补充开关
+    // === 自动补充触发阈值 ===
+    public int refillCountThreshold = 0;        // 数量低于此值触发补充，0表示用完才补充
+    public int refillDurabilityThreshold = 1;   // 耐久剩余百分比低于此值触发补充（%）
 
     // 自动关闭功能开关
     public boolean autoDisableAttack = true;  // 自动攻击超时关闭

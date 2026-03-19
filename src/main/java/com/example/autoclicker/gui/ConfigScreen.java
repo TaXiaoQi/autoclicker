@@ -255,7 +255,31 @@ public class ConfigScreen extends Screen {
         scrollList.addChild(elements.getLast().getWidget());
         yOffset += 25;
 
-        // === 自动关闭设置（新增） ===
+        // 数量触发阈值（0-63）
+        elements.add(new IntSliderElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.refill_count_threshold"),
+                0, 63, config.refillCountThreshold,
+                value -> {
+                    config.refillCountThreshold = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 30;  // 需要这行！
+
+        // 耐久触发阈值（0-100%）
+        elements.add(new IntSliderElement(0, yOffset, elementWidth, 20,
+                Component.translatable("config.refill_durability_threshold"),
+                0, 100, config.refillDurabilityThreshold,
+                value -> {
+                    config.refillDurabilityThreshold = value;
+                    updateDoneButton();
+                }
+        ));
+        scrollList.addChild(elements.getLast().getWidget());
+        yOffset += 30;  // 也需要这行！
+
+        // === 自动关闭设置 ===
         addSectionTitle(scrollList, elementWidth, yOffset, Component.translatable("config.section.auto_disable"));
         yOffset += 25;
 

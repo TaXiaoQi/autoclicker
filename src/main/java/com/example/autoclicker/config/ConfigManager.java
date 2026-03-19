@@ -52,6 +52,16 @@ public class ConfigManager {
         if (cfg.attackRandomness < 0) cfg.attackRandomness = 0;
         if (cfg.placeRandomness < 0) cfg.placeRandomness = 0;
         if (cfg.autoDisableTimeout < 1) cfg.autoDisableTimeout = 1;
+
+        // 自动关闭时间验证
         if (cfg.autoDisableTimeout > 240) cfg.autoDisableTimeout = 240;
+
+        // 补充数量阈值的验证！
+        if (cfg.refillCountThreshold < 0) cfg.refillCountThreshold = 0;
+        if (cfg.refillCountThreshold > 63) cfg.refillCountThreshold = 63;
+
+        // 补充耐久阈值的验证！
+        if (cfg.refillDurabilityThreshold < 0) cfg.refillDurabilityThreshold = 0;
+        if (cfg.refillDurabilityThreshold > 100) cfg.refillDurabilityThreshold = 100;
     }
 }
