@@ -25,6 +25,10 @@ public class AutoClicker {
     private long lastSuccessfulAttackTime = -1;
     private long lastSuccessfulPlaceTime = -1;
 
+    // 添加状态跟踪变量
+    private boolean wasAttackEnabled = false;
+    private boolean wasPlaceEnabled = false;
+
     // 记录功能启动时间
     private long attackStartTime = -1;
     private long placeStartTime = -1;
@@ -40,15 +44,15 @@ public class AutoClicker {
             memoryInitialized = true;
         }
 
-        // 获取当前游戏刻
         var levelTime = client.level.getGameTime();
-
-        // 更新冷却计时器
         if (attackCooldown > 0) attackCooldown--;
         if (placeCooldown > 0) placeCooldown--;
 
+        boolean attackNowEnabled = isAutoAttackEnabled();
+        boolean placeNowEnabled = isAutoPlaceEnabled();
+
         // ===== 自动攻击逻辑 =====
-        if (isAutoAttackEnabled()) {
+        if (attackNowEnabled) {
             if (attackStartTime == -1) {
                 attackStartTime = levelTime;
                 Main.LOGGER.debug("自动攻击启动，开始计时，启动时刻：{}", attackStartTime);
@@ -62,21 +66,22 @@ public class AutoClicker {
                     lastSuccessfulAttackTime = levelTime;
                     Main.LOGGER.debug("攻击成功，更新时间戳：{}", lastSuccessfulAttackTime);
 
-                    // 调用攻击专用的自动补充
-                    autoRefill.onAttackUsed();  // 先更新记忆
+                    autoRefill.onAttackUsed();
                     autoRefill.checkAndRefillForAttack(client);
                 }
             }
-        } else {
+        }
+        // 只在功能从开启变为关闭时清除记忆
+        else if (wasAttackEnabled) {
             attackTickCounter = 0;
             lastSuccessfulAttackTime = -1;
             attackStartTime = -1;
-            // 只清除攻击功能的记忆
             autoRefill.clearAttackMemory();
+            Main.LOGGER.debug("攻击功能已关闭，清除记忆");
         }
 
         // ===== 自动放置逻辑 =====
-        if (isAutoPlaceEnabled()) {
+        if (placeNowEnabled) {
             if (placeStartTime == -1) {
                 placeStartTime = levelTime;
                 Main.LOGGER.debug("自动放置启动，开始计时，启动时刻：{}", placeStartTime);
@@ -90,21 +95,26 @@ public class AutoClicker {
                     lastSuccessfulPlaceTime = levelTime;
                     Main.LOGGER.debug("放置成功，更新时间戳：{}", lastSuccessfulPlaceTime);
 
-                    // 调用放置专用的自动补充
-                    autoRefill.onPlaceUsed();  // 先更新记忆
+                    autoRefill.onPlaceUsed();
                     autoRefill.checkAndRefillForPlace(client);
                 }
             }
-        } else {
+        }
+        // 只在功能从开启变为关闭时清除记忆
+        else if (wasPlaceEnabled) {
             placeTickCounter = 0;
             lastSuccessfulPlaceTime = -1;
             placeStartTime = -1;
-            // 只清除放置功能的记忆
             autoRefill.clearPlaceMemory();
+            Main.LOGGER.debug("放置功能已关闭，清除记忆");
         }
 
-        // 添加超时检测
+        // 更新状态跟踪变量
+        wasAttackEnabled = attackNowEnabled;
+        wasPlaceEnabled = placeNowEnabled;
+
         checkAndDisableTimeout(levelTime);
+
     }
 
     private void initMemory() {
@@ -142,7 +152,6 @@ public class AutoClicker {
                 // 重置状态
                 attackStartTime = -1;
                 lastSuccessfulAttackTime = -1;
-                memoryInitialized = false;
                 Main.LOGGER.info("自动攻击已超时关闭（{}秒无操作）", config.autoDisableTimeout);
             }
         }
@@ -161,7 +170,6 @@ public class AutoClicker {
                 // 重置状态
                 placeStartTime = -1;
                 lastSuccessfulPlaceTime = -1;
-                memoryInitialized = false;
                 Main.LOGGER.info("自动放置已超时关闭（{}秒无操作）", config.autoDisableTimeout);
             }
         }

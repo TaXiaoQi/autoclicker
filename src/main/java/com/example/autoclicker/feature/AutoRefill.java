@@ -83,12 +83,11 @@ public class AutoRefill {
         }
     }
 
-
     // 为攻击和放置分别维护状态
     private static class FeatureMemory {
         MemoryState currentState = MemoryState.UNINITIALIZED;
         Map<Integer, ItemMemory> initialMemory = new HashMap<>();  // 初始记录的所有物品
-        ItemMemory lockedItem = null;  // 锁定的物品记忆
+        Map<Integer, ItemMemory> lockedItems = new HashMap<>();    // 锁定的物品记忆（槽位 -> 记忆）
     }
 
     private final FeatureMemory attackMemory = new FeatureMemory();  // 攻击功能的记忆
@@ -117,11 +116,11 @@ public class AutoRefill {
                 break;
 
             case INITIALIZED:
-                detectUsedItemForAttack(attackMemory, player );
+                detectUsedItemsForAttack(attackMemory, player);
                 break;
 
             case LOCKED:
-                checkAndRefillLockedItem(attackMemory, player, inventory, true);
+                checkAndRefillLockedItems(attackMemory, player, inventory, true);
                 break;
         }
     }
@@ -144,11 +143,11 @@ public class AutoRefill {
                 break;
 
             case INITIALIZED:
-                detectUsedItemForPlace(placeMemory, player );
+                detectUsedItemsForPlace(placeMemory, player);
                 break;
 
             case LOCKED:
-                checkAndRefillLockedItem(placeMemory, player, inventory, false);
+                checkAndRefillLockedItems(placeMemory, player, inventory, false);
                 break;
         }
     }
@@ -159,6 +158,7 @@ public class AutoRefill {
      */
     private void initializeMemory(FeatureMemory memory, Inventory inventory, boolean forAttack) {
         memory.initialMemory.clear();
+        memory.lockedItems.clear();
 
         // 记录快捷栏物品（0-8）
         for (int i = HOTBAR_START; i <= HOTBAR_END; i++) {
@@ -185,62 +185,99 @@ public class AutoRefill {
     }
 
     /**
-     * 攻击功能：检测正在使用的物品
+     * 攻击功能：检测正在使用的物品（只检测主手）
      */
-    private void detectUsedItemForAttack(FeatureMemory memory, LocalPlayer player) {
+    private void detectUsedItemsForAttack(FeatureMemory memory, LocalPlayer player) {
         ItemStack currentMainHand = player.getMainHandItem();
         if (currentMainHand.isEmpty()) return;
 
         // 查找哪个初始记录物品发生了变化
         ItemMemory changedItem = findChangedItem(memory, currentMainHand);
         if (changedItem != null) {
-            memory.lockedItem = new ItemMemory(currentMainHand, changedItem.slot);
+            // 确保锁定的是主手槽位
+            if (changedItem.slot != OFFHAND_SLOT) {
+                memory.lockedItems.put(changedItem.slot, new ItemMemory(currentMainHand, changedItem.slot));
+                Main.LOGGER.debug("攻击功能锁定物品: {} 来自槽位 {}, 当前数量: {}, 耐久: {}",
+                        currentMainHand.getItem().getDescriptionId(),
+                        changedItem.slot,
+                        currentMainHand.getCount(),
+                        currentMainHand.isDamageableItem() ? currentMainHand.getDamageValue() : "N/A");
+            }
+        }
+
+        // 如果所有启用的槽位都已锁定，进入LOCKED状态
+        if (allSlotsLocked(memory, true)) {
             memory.currentState = MemoryState.LOCKED;
             memory.initialMemory.clear();
-            Main.LOGGER.debug("攻击功能锁定物品: {} 来自槽位 {}, 当前数量: {}, 耐久: {}",
-                    currentMainHand.getItem().getDescriptionId(),
-                    changedItem.slot,
-                    currentMainHand.getCount(),
-                    currentMainHand.isDamageableItem() ? currentMainHand.getDamageValue() : "N/A");
+            Main.LOGGER.info("攻击功能所有物品已锁定");
         }
     }
 
     /**
-     * 放置功能：检测正在使用的物品
+     * 放置功能：检测正在使用的物品（主手和副手）
      */
-    private void detectUsedItemForPlace(FeatureMemory memory, LocalPlayer player) {
+    private void detectUsedItemsForPlace(FeatureMemory memory, LocalPlayer player) {
         var config = ConfigManager.getConfig();
 
-        // 先检查主手
+        // 检测主手
         if (config.autoRefillMainHand) {
             ItemStack currentMainHand = player.getMainHandItem();
             if (!currentMainHand.isEmpty()) {
                 ItemMemory changedItem = findChangedItem(memory, currentMainHand);
                 if (changedItem != null) {
-                    memory.lockedItem = new ItemMemory(currentMainHand, changedItem.slot);
-                    memory.currentState = MemoryState.LOCKED;
-                    memory.initialMemory.clear();
+                    memory.lockedItems.put(changedItem.slot, new ItemMemory(currentMainHand, changedItem.slot));
                     Main.LOGGER.debug("放置功能锁定主手物品: {} 来自槽位 {}",
                             currentMainHand.getItem().getDescriptionId(), changedItem.slot);
-                    return;
                 }
             }
         }
 
-        // 再检查副手
+        // 检测副手
         if (config.autoRefillOffHand) {
             ItemStack currentOffHand = player.getOffhandItem();
             if (!currentOffHand.isEmpty()) {
                 ItemMemory offHandMemory = memory.initialMemory.get(OFFHAND_SLOT);
                 if (offHandMemory != null && hasItemChanged(offHandMemory, currentOffHand)) {
-                    memory.lockedItem = new ItemMemory(currentOffHand, OFFHAND_SLOT);
-                    memory.currentState = MemoryState.LOCKED;
-                    memory.initialMemory.clear();
+                    memory.lockedItems.put(OFFHAND_SLOT, new ItemMemory(currentOffHand, OFFHAND_SLOT));
                     Main.LOGGER.debug("放置功能锁定副手物品: {}",
                             currentOffHand.getItem().getDescriptionId());
                 }
             }
         }
+
+        // 如果所有启用的槽位都已锁定，进入LOCKED状态
+        if (allSlotsLocked(memory, false)) {
+            memory.currentState = MemoryState.LOCKED;
+            memory.initialMemory.clear();
+            Main.LOGGER.info("放置功能所有物品已锁定");
+        }
+    }
+
+    /**
+     * 检查是否所有需要监控的槽位都已锁定
+     */
+    private boolean allSlotsLocked(FeatureMemory memory, boolean isAttack) {
+        var config = ConfigManager.getConfig();
+
+        for (Map.Entry<Integer, ItemMemory> entry : memory.initialMemory.entrySet()) {
+            int slot = entry.getKey();
+
+            // 攻击功能只监控主手槽位
+            if (isAttack && slot == OFFHAND_SLOT) continue;
+
+            // 检查这个槽位是否需要监控
+            boolean shouldMonitor;
+            if (isAttack) {
+                shouldMonitor = config.autoRefillMainHand;
+            } else {
+                shouldMonitor = (slot == OFFHAND_SLOT) ? config.autoRefillOffHand : config.autoRefillMainHand;
+            }
+
+            if (shouldMonitor && !memory.lockedItems.containsKey(slot)) {
+                return false; // 还有未锁定的槽位
+            }
+        }
+        return true; // 所有需要监控的槽位都已锁定
     }
 
     /**
@@ -250,8 +287,8 @@ public class AutoRefill {
         for (Map.Entry<Integer, ItemMemory> entry : memory.initialMemory.entrySet()) {
             ItemMemory itemMemory = entry.getValue();
 
-            // 跳过副手槽位（如果是在攻击功能中）
-            if (entry.getKey() == OFFHAND_SLOT) continue;
+            // 跳过已经锁定的槽位
+            if (memory.lockedItems.containsKey(entry.getKey())) continue;
 
             if (itemMemory.item == currentItem.getItem()) {
                 if (hasItemChanged(itemMemory, currentItem)) {
@@ -272,7 +309,7 @@ public class AutoRefill {
         // 检查数量是否减少
         if (currentStack.getCount() < memory.initialCount) {
             Main.LOGGER.debug("物品数量从 {} 减少到 {}", memory.initialCount, currentStack.getCount());
-            return true;  // 需要返回 true
+            return true;
         }
 
         // 如果是可损坏物品，检查耐久是否减少
@@ -280,7 +317,7 @@ public class AutoRefill {
             int currentDurability = currentStack.getDamageValue();
             if (currentDurability > memory.initialDurability) {
                 Main.LOGGER.debug("物品耐久从 {} 增加到 {}", memory.initialDurability, currentDurability);
-                return true;  // 需要返回 true
+                return true;
             }
         }
 
@@ -288,22 +325,60 @@ public class AutoRefill {
     }
 
     /**
-     * 锁定阶段：监控并补充锁定的物品
+     * 锁定阶段：监控并补充所有锁定的物品
      */
-    private void checkAndRefillLockedItem(FeatureMemory memory, LocalPlayer player,
-                                          Inventory inventory, boolean isAttack) {
-        if (memory.lockedItem == null) return;
+    private void checkAndRefillLockedItems(FeatureMemory memory, LocalPlayer player,
+                                           Inventory inventory, boolean isAttack) {
+        if (memory.lockedItems.isEmpty()) return;
 
-        ItemStack currentItem = isAttack ? player.getMainHandItem() :
-                (memory.lockedItem.slot == OFFHAND_SLOT ? player.getOffhandItem() : player.getMainHandItem());
+        var config = ConfigManager.getConfig();
+        boolean needRecheck = false;
 
-        // 如果当前物品不是锁定的物品，或者需要补充
-        if (!memory.lockedItem.matches(currentItem) || memory.lockedItem.needsRefill(currentItem)) {
-            if (!tryRefillFromInventory(player, inventory, memory.lockedItem)) {
-                memory.lockedItem = null;
-                memory.currentState = MemoryState.UNINITIALIZED;
-                Main.LOGGER.warn("物品无法补充，已清除记忆");
+        // 遍历所有锁定的物品
+        for (Map.Entry<Integer, ItemMemory> entry : memory.lockedItems.entrySet()) {
+            int slot = entry.getKey();
+            ItemMemory lockedItem = entry.getValue();
+
+            // 检查这个槽位是否应该被监控
+            boolean shouldMonitor;
+            if (isAttack) {
+                shouldMonitor = config.autoRefillMainHand;
+            } else {
+                shouldMonitor = (slot == OFFHAND_SLOT) ? config.autoRefillOffHand : config.autoRefillMainHand;
             }
+
+            if (!shouldMonitor) {
+                needRecheck = true;
+                continue;
+            }
+
+            // 获取当前槽位的物品
+            ItemStack currentItem = inventory.getItem(slot);
+
+            // 如果当前物品不是锁定的物品，或者需要补充
+            if (!lockedItem.matches(currentItem) || lockedItem.needsRefill(currentItem)) {
+                if (!tryRefillFromInventory(player, inventory, lockedItem)) {
+                    // 无法补充，标记需要移除
+                    needRecheck = true;
+                    Main.LOGGER.warn("槽位 {} 物品无法补充", slot);
+                }
+            }
+        }
+
+        // 清理无法补充的锁定物品
+        if (needRecheck) {
+            memory.lockedItems.entrySet().removeIf(entry -> {
+                int slot = entry.getKey();
+                ItemMemory lockedItem = entry.getValue();
+                ItemStack currentItem = inventory.getItem(slot);
+                return !lockedItem.matches(currentItem) || lockedItem.needsRefill(currentItem);
+            });
+        }
+
+        // 如果没有锁定的物品了，回到未初始化状态
+        if (memory.lockedItems.isEmpty()) {
+            memory.currentState = MemoryState.UNINITIALIZED;
+            Main.LOGGER.info("所有锁定物品已失效，等待重新初始化");
         }
     }
 
@@ -327,20 +402,26 @@ public class AutoRefill {
             // 跳过盔甲槽 (36-39)
             if (i >= 36 && i <= 39) continue;
 
+            // 如果是副手槽位但目标不是副手，跳过
+            if (i == OFFHAND_SLOT && targetSlot != OFFHAND_SLOT) continue;
+
             ItemStack stack = inventory.getItem(i);
             if (stack.isEmpty() || !memory.matches(stack)) continue;
 
             // 如果物品在快捷栏但不是目标槽位，直接交换
             if (i <= HOTBAR_END) {
                 if (i != targetSlot) {
-                    mc.gameMode.handleInventoryMouseClick(
-                            0, i, targetSlot, ClickType.SWAP, player
-                    );
-                    Main.LOGGER.debug("从槽位 {} 交换物品到槽位 {}", i, targetSlot);
-                    return true;
+                    // 确保目标槽位在快捷栏内
+                    if (targetSlot >= HOTBAR_START && targetSlot <= HOTBAR_END) {
+                        mc.gameMode.handleInventoryMouseClick(
+                                0, i, targetSlot, ClickType.SWAP, player
+                        );
+                        Main.LOGGER.debug("从槽位 {} 交换物品到槽位 {}", i, targetSlot);
+                        return true;
+                    }
                 }
             }
-            // 物品在主背包（9-35），需要两步操作
+            // 物品在主背包（9-35）或副手，需要两步操作
             else {
                 // 第一步：将物品拿到光标上
                 mc.gameMode.handleInventoryMouseClick(
@@ -351,6 +432,13 @@ public class AutoRefill {
                 mc.gameMode.handleInventoryMouseClick(
                         0, targetSlot, 0, ClickType.PICKUP, player
                 );
+
+                // 如果光标上还有物品（比如从副手槽拿的），放回去
+                if (mc.player != null && !mc.player.containerMenu.getCarried().isEmpty()) {
+                    mc.gameMode.handleInventoryMouseClick(
+                            0, i, 0, ClickType.PICKUP, player
+                    );
+                }
 
                 Main.LOGGER.debug("从背包槽位 {} 移动物品到槽位 {}", i, targetSlot);
                 return true;
@@ -366,7 +454,7 @@ public class AutoRefill {
     public void clearAttackMemory() {
         attackMemory.currentState = MemoryState.UNINITIALIZED;
         attackMemory.initialMemory.clear();
-        attackMemory.lockedItem = null;
+        attackMemory.lockedItems.clear();
         Main.LOGGER.info("攻击功能自动补货记忆已清除");
     }
 
@@ -376,7 +464,7 @@ public class AutoRefill {
     public void clearPlaceMemory() {
         placeMemory.currentState = MemoryState.UNINITIALIZED;
         placeMemory.initialMemory.clear();
-        placeMemory.lockedItem = null;
+        placeMemory.lockedItems.clear();
         Main.LOGGER.info("放置功能自动补货记忆已清除");
     }
 
@@ -384,16 +472,19 @@ public class AutoRefill {
      * 当成功使用物品后调用（攻击成功时）
      */
     public void onAttackUsed() {
-        if (attackMemory.currentState != MemoryState.LOCKED || attackMemory.lockedItem == null) return;
+        if (attackMemory.currentState != MemoryState.LOCKED) return;
 
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
-        ItemStack mainHand = client.player.getMainHandItem();
-        if (attackMemory.lockedItem.matches(mainHand)) {
-            // 只更新耐久度，不更新数量阈值
-            if (attackMemory.lockedItem.isDamageable && mainHand.isDamageableItem()) {
-                attackMemory.lockedItem.initialDurability = mainHand.getDamageValue();
+        // 攻击功能只锁定主手物品，直接遍历所有锁定的物品
+        for (ItemMemory lockedItem : attackMemory.lockedItems.values()) {
+            ItemStack currentItem = client.player.getInventory().getItem(lockedItem.slot);
+            if (lockedItem.matches(currentItem)) {
+                // 只更新耐久度，不更新数量阈值
+                if (lockedItem.isDamageable && currentItem.isDamageableItem()) {
+                    lockedItem.initialDurability = currentItem.getDamageValue();
+                }
             }
         }
     }
@@ -402,29 +493,28 @@ public class AutoRefill {
      * 当成功使用物品后调用（放置成功时）
      */
     public void onPlaceUsed() {
-        if (placeMemory.currentState != MemoryState.LOCKED || placeMemory.lockedItem == null) return;
+        if (placeMemory.currentState != MemoryState.LOCKED) return;
 
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
         var config = ConfigManager.getConfig();
 
-        // 更新主手
-        if (config.autoRefillMainHand && placeMemory.lockedItem.slot != OFFHAND_SLOT) {
-            ItemStack mainHand = client.player.getMainHandItem();
-            if (placeMemory.lockedItem.matches(mainHand)) {
-                if (placeMemory.lockedItem.isDamageable && mainHand.isDamageableItem()) {
-                    placeMemory.lockedItem.initialDurability = mainHand.getDamageValue();
-                }
-            }
-        }
+        // 遍历所有锁定的物品
+        for (ItemMemory lockedItem : placeMemory.lockedItems.values()) {
+            int slot = lockedItem.slot;
 
-        // 更新副手
-        if (config.autoRefillOffHand && placeMemory.lockedItem.slot == OFFHAND_SLOT) {
-            ItemStack offHand = client.player.getOffhandItem();
-            if (placeMemory.lockedItem.matches(offHand)) {
-                if (placeMemory.lockedItem.isDamageable && offHand.isDamageableItem()) {
-                    placeMemory.lockedItem.initialDurability = offHand.getDamageValue();
+            // 检查这个槽位是否应该被监控
+            boolean shouldMonitor = (slot == OFFHAND_SLOT) ?
+                    config.autoRefillOffHand : config.autoRefillMainHand;
+
+            if (!shouldMonitor) continue;
+
+            ItemStack currentItem = client.player.getInventory().getItem(slot);
+            if (lockedItem.matches(currentItem)) {
+                // 只更新耐久度，不更新数量阈值
+                if (lockedItem.isDamageable && currentItem.isDamageableItem()) {
+                    lockedItem.initialDurability = currentItem.getDamageValue();
                 }
             }
         }
