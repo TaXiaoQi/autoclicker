@@ -20,6 +20,12 @@ public class AutoClicker {
     private int attackCooldown = 0;
     private int placeCooldown = 0;
 
+    // 添加延迟补货计数器
+    private int attackRefillDelay = 0;
+    private int placeRefillDelay = 0;
+
+    private static final int REFILL_DELAY_TICKS = 2;
+
     private final AutoRefill autoRefill = new AutoRefill();
 
     private long lastSuccessfulAttackTime = -1;
@@ -53,6 +59,21 @@ public class AutoClicker {
             Main.LOGGER.info("自动补货记忆初始化完成");
         }
 
+        // 处理延迟补货
+        if (attackRefillDelay > 0) {
+            attackRefillDelay--;
+            if (attackRefillDelay == 0) {
+                autoRefill.onAttackUsed();
+            }
+        }
+
+        if (placeRefillDelay > 0) {
+            placeRefillDelay--;
+            if (placeRefillDelay == 0) {
+                autoRefill.onPlaceUsed();
+            }
+        }
+
         var levelTime = client.level.getGameTime();
         if (attackCooldown > 0) attackCooldown--;
         if (placeCooldown > 0) placeCooldown--;
@@ -69,8 +90,10 @@ public class AutoClicker {
                     attackCooldown = getAttackCooldown();
                     lastSuccessfulAttackTime = levelTime;
                     Main.LOGGER.debug("攻击成功，更新时间戳：{}", lastSuccessfulAttackTime);
-                    // 攻击成功，调用补充检测
-                    autoRefill.onAttackUsed();
+                    // 攻击成功，延迟2tick调用补货
+                    if (attackRefillDelay == 0) {
+                        attackRefillDelay = REFILL_DELAY_TICKS;
+                    }
                 }
             }
         }
@@ -84,9 +107,10 @@ public class AutoClicker {
                     placeCooldown = getPlaceCooldown();
                     lastSuccessfulPlaceTime = levelTime;
                     Main.LOGGER.debug("放置成功，更新时间戳：{}", lastSuccessfulPlaceTime);
-
-                    // 调用自动补充检测
-                    autoRefill.onPlaceUsed();
+                    // 放置成功，延迟2tick调用补货
+                    if (placeRefillDelay == 0) {
+                        placeRefillDelay = REFILL_DELAY_TICKS;
+                    }
                 }
             }
         }
@@ -147,6 +171,10 @@ public class AutoClicker {
         placeCooldown = 0;
         lastSuccessfulAttackTime = -1;
         lastSuccessfulPlaceTime = -1;
+
+        // 重置延迟补货计数器
+        attackRefillDelay = 0;
+        placeRefillDelay = 0;
 
         // 新增：重置启动时间
         attackStartTime = -1;
@@ -230,25 +258,19 @@ public class AutoClicker {
             ItemStack offHandItem = client.player.getOffhandItem();
 
             // ===== 1. 骨粉逻辑 =====
-            if (config.useBoneMeal) {
-                // 检查瞄准的方块是否是可催熟的植物
-                if (state != null && (state.getBlock() instanceof CropBlock ||
-                        state.getBlock() instanceof SaplingBlock ||
-                        state.getBlock() instanceof StemBlock)) {
-
-                    // 检查主副手是否有骨粉
-                    if (mainHandItem.getItem() == Items.BONE_MEAL) {
-                        InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
-                        if (result.consumesAction()) {
-                            client.player.swing(InteractionHand.MAIN_HAND);
-                            return true;
-                        }
-                    } else if (offHandItem.getItem() == Items.BONE_MEAL) {
-                        InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
-                        if (result.consumesAction()) {
-                            client.player.swing(InteractionHand.OFF_HAND);
-                            return true;
-                        }
+            if (config.useBoneMeal && state != null && canUseBoneMealOn(state.getBlock())) {
+                // 检查主副手是否有骨粉
+                if (mainHandItem.getItem() == Items.BONE_MEAL) {
+                    InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
+                    if (result.consumesAction()) {
+                        client.player.swing(InteractionHand.MAIN_HAND);
+                        return true;
+                    }
+                } else if (offHandItem.getItem() == Items.BONE_MEAL) {
+                    InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
+                    if (result.consumesAction()) {
+                        client.player.swing(InteractionHand.OFF_HAND);
+                        return true;
                     }
                 }
             }
@@ -284,6 +306,29 @@ public class AutoClicker {
         return false;
     }
 
+    /**
+     * 检查方块是否可以使用骨粉
+     */
+    private boolean canUseBoneMealOn(Block block) {
+        return block instanceof CropBlock ||          // 作物类
+                block instanceof SaplingBlock ||      // 树苗类
+                block instanceof StemBlock ||         // 茎类
+                block == Blocks.SEA_PICKLE ||         // 海泡菜
+                block == Blocks.KELP ||               // 海带
+                block == Blocks.KELP_PLANT ||         // 海带植物
+                block == Blocks.WEEPING_VINES ||      // 垂泪藤
+                block == Blocks.TWISTING_VINES ||     // 缠怨藤
+                block == Blocks.CAVE_VINES ||         // 洞穴藤蔓
+                block == Blocks.CAVE_VINES_PLANT ||   // 洞穴藤蔓植物
+                block == Blocks.SMALL_DRIPLEAF ||     // 小型垂滴叶
+                block == Blocks.BIG_DRIPLEAF ||       // 大型垂滴叶
+                block == Blocks.AZALEA ||             // 杜鹃花丛
+                block == Blocks.FLOWERING_AZALEA ||   // 盛开的杜鹃花丛
+                // 下界菌类（可长成巨型菌）
+                block == Blocks.CRIMSON_FUNGUS ||     // 绯红菌
+                block == Blocks.WARPED_FUNGUS;     // 诡异菌
+    }
+
     private boolean isPlantableItem(ItemStack itemStack) {
         if (itemStack.isEmpty()) return false;
         var item = itemStack.getItem();
@@ -311,6 +356,12 @@ public class AutoClicker {
                 item == Items.DARK_OAK_SAPLING ||
                 item == Items.MANGROVE_PROPAGULE ||
                 item == Items.CHERRY_SAPLING ||
+                // 杜鹃花丛
+                item == Items.AZALEA ||
+                item == Items.FLOWERING_AZALEA ||
+                // 下界菌类
+                item == Items.CRIMSON_FUNGUS ||      // 绯红菌（种在绯红菌岩上）
+                item == Items.WARPED_FUNGUS ||       // 诡异菌（种在诡异菌岩上）
                 // 其他植物
                 item == Items.RED_MUSHROOM ||
                 item == Items.BROWN_MUSHROOM ||
@@ -330,10 +381,13 @@ public class AutoClicker {
                 block == Blocks.SOUL_SAND ||       // 灵魂沙（地狱疣）
                 block == Blocks.SAND ||            // 沙子（仙人掌、甘蔗）
                 block == Blocks.RED_SAND ||        // 红沙
-                block == Blocks.PODZOL ||          // 灰化土（蘑菇）
+                block == Blocks.PODZOL ||          // 灰化土（蘑菇、杜鹃花丛）
                 block == Blocks.MYCELIUM ||        // 菌丝（蘑菇）
                 block == Blocks.CLAY ||            // 黏土（海泡菜）
-                block == Blocks.GRAVEL;            // 沙砾（海草）
+                block == Blocks.GRAVEL ||          // 沙砾（海草）
+                // 下界菌岩（菌类种植）
+                block == Blocks.CRIMSON_NYLIUM ||   // 绯红菌岩
+                block == Blocks.WARPED_NYLIUM;      // 诡异菌岩
     }
 
     // 配置访问方法
