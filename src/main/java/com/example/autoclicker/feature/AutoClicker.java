@@ -25,9 +25,6 @@ public class AutoClicker {
     private long lastSuccessfulAttackTime = -1;
     private long lastSuccessfulPlaceTime = -1;
 
-    // 添加状态跟踪变量
-    private boolean wasAttackEnabled = false;
-    private boolean wasPlaceEnabled = false;
 
     // 记录功能启动时间
     private long attackStartTime = -1;
@@ -38,10 +35,22 @@ public class AutoClicker {
     public void tick(Minecraft client) {
         if (client.player == null || client.level == null) return;
 
-        // 首次运行或切换世界时初始化记忆
         if (!memoryInitialized) {
-            initMemory();
+            var config = ConfigManager.getConfig();
+
+            if (config.autoRefillMainHand || config.autoRefillOffHand) {
+                if (config.autoAttackEnabled) {
+                    autoRefill.onAttackUsed();  // 初始化攻击记忆
+                    Main.LOGGER.debug("攻击功能自动补货记忆已初始化");
+                }
+                if (config.autoPlaceEnabled) {
+                    autoRefill.onPlaceUsed();   // 初始化放置记忆
+                    Main.LOGGER.debug("放置功能自动补货记忆已初始化");
+                }
+            }
+
             memoryInitialized = true;
+            Main.LOGGER.info("自动补货记忆初始化完成");
         }
 
         var levelTime = client.level.getGameTime();
@@ -53,11 +62,6 @@ public class AutoClicker {
 
         // ===== 自动攻击逻辑 =====
         if (attackNowEnabled) {
-            if (attackStartTime == -1) {
-                attackStartTime = levelTime;
-                Main.LOGGER.debug("自动攻击启动，开始计时，启动时刻：{}", attackStartTime);
-            }
-
             attackTickCounter++;
             if (attackTickCounter >= getAttackInterval() && attackCooldown <= 0) {
                 if (performAttack(client)) {
@@ -66,27 +70,12 @@ public class AutoClicker {
                     lastSuccessfulAttackTime = levelTime;
                     Main.LOGGER.debug("攻击成功，更新时间戳：{}", lastSuccessfulAttackTime);
 
-                    autoRefill.onAttackUsed();
-                    autoRefill.checkAndRefillForAttack(client);
                 }
             }
-        }
-        // 只在功能从开启变为关闭时清除记忆
-        else if (wasAttackEnabled) {
-            attackTickCounter = 0;
-            lastSuccessfulAttackTime = -1;
-            attackStartTime = -1;
-            autoRefill.clearAttackMemory();
-            Main.LOGGER.debug("攻击功能已关闭，清除记忆");
         }
 
         // ===== 自动放置逻辑 =====
         if (placeNowEnabled) {
-            if (placeStartTime == -1) {
-                placeStartTime = levelTime;
-                Main.LOGGER.debug("自动放置启动，开始计时，启动时刻：{}", placeStartTime);
-            }
-
             placeTickCounter++;
             if (placeTickCounter >= getPlaceInterval() && placeCooldown <= 0) {
                 if (performAutoPlace(client)) {
@@ -95,41 +84,12 @@ public class AutoClicker {
                     lastSuccessfulPlaceTime = levelTime;
                     Main.LOGGER.debug("放置成功，更新时间戳：{}", lastSuccessfulPlaceTime);
 
-                    autoRefill.onPlaceUsed();
-                    autoRefill.checkAndRefillForPlace(client);
+                    autoRefill.onAttackUsed();
                 }
             }
         }
-        // 只在功能从开启变为关闭时清除记忆
-        else if (wasPlaceEnabled) {
-            placeTickCounter = 0;
-            lastSuccessfulPlaceTime = -1;
-            placeStartTime = -1;
-            autoRefill.clearPlaceMemory();
-            Main.LOGGER.debug("放置功能已关闭，清除记忆");
-        }
-
-        // 更新状态跟踪变量
-        wasAttackEnabled = attackNowEnabled;
-        wasPlaceEnabled = placeNowEnabled;
 
         checkAndDisableTimeout(levelTime);
-
-    }
-
-    private void initMemory() {
-        var config = ConfigManager.getConfig();
-
-        if (config.autoRefillMainHand || config.autoRefillOffHand) {
-            // 分别初始化两个功能的记忆
-            if (config.autoAttackEnabled) {
-                autoRefill.checkAndRefillForAttack(Minecraft.getInstance());
-            }
-            if (config.autoPlaceEnabled) {
-                autoRefill.checkAndRefillForPlace(Minecraft.getInstance());
-            }
-            Main.LOGGER.info("自动补货记忆已初始化");
-        }
     }
 
     private void checkAndDisableTimeout(long currentTime) {
@@ -205,6 +165,7 @@ public class AutoClicker {
         ConfigManager.save();
     }
 
+    // 攻击逻辑
     private boolean performAttack(Minecraft client) {
         try {
             if (client.gameMode == null || client.player == null) return false;
@@ -220,6 +181,7 @@ public class AutoClicker {
             if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && config.attackArmorStands) {
                 client.gameMode.attack(client.player, entity);
                 client.player.swing(InteractionHand.MAIN_HAND);
+                autoRefill.onAttackUsed();  // ✅ 攻击成功，更新状态
                 return true;
             }
 
@@ -229,12 +191,14 @@ public class AutoClicker {
                 if (category == net.minecraft.world.entity.MobCategory.MONSTER && config.attackHostileMobs) {
                     client.gameMode.attack(client.player, entity);
                     client.player.swing(InteractionHand.MAIN_HAND);
+                    autoRefill.onAttackUsed();  // ✅ 攻击成功，更新状态
                     return true;
                 }
                 // 攻击中立生物
                 if (category == net.minecraft.world.entity.MobCategory.CREATURE && config.attackNeutralMobs) {
                     client.gameMode.attack(client.player, entity);
                     client.player.swing(InteractionHand.MAIN_HAND);
+                    autoRefill.onAttackUsed();  // ✅ 攻击成功，更新状态
                     return true;
                 }
             }
@@ -244,6 +208,7 @@ public class AutoClicker {
         return false;
     }
 
+    // 放置逻辑
     private boolean performAutoPlace(Minecraft client) {
         try {
             if (client.gameMode == null || client.player == null) return false;
@@ -277,12 +242,14 @@ public class AutoClicker {
                         InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
                         if (result.consumesAction()) {
                             client.player.swing(InteractionHand.MAIN_HAND);
+                            autoRefill.onPlaceUsed();  // ✅ 放置成功，更新状态
                             return true;
                         }
                     } else if (offHandItem.getItem() == Items.BONE_MEAL) {
                         InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
                         if (result.consumesAction()) {
                             client.player.swing(InteractionHand.OFF_HAND);
+                            autoRefill.onPlaceUsed();  // ✅ 放置成功，更新状态
                             return true;
                         }
                     }
@@ -310,11 +277,11 @@ public class AutoClicker {
                     InteractionResult result = client.gameMode.useItemOn(client.player, hand, blockHit);
                     if (result.consumesAction()) {
                         client.player.swing(hand);
+                        autoRefill.onPlaceUsed();  // ✅ 放置成功，更新状态
                         return true;
                     }
                 }
             }
-
         } catch (Exception e) {
             Main.LOGGER.error("自动放置出错", e);
         }
