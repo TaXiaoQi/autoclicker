@@ -55,26 +55,16 @@ public class AutoRefill {
 
         // 处理主手
         if (config.autoRefillMainHand) {
-            // 配置开启，进入记忆管理
             manageAttackMainHandMemory(client.player);
         } else {
-            // 配置关闭，检查并清除记忆
-            if (attackMainHandMem != null) {
-                Main.LOGGER.debug("攻击主手配置关闭，清除记忆");
-                attackMainHandMem = null;
-            }
+            attackMainHandMem = null;
         }
 
         // 处理副手
         if (config.autoRefillOffHand) {
-            // 配置开启，进入记忆管理
             manageAttackOffHandMemory(client.player);
         } else {
-            // 配置关闭，检查并清除记忆
-            if (attackOffHandMem != null) {
-                Main.LOGGER.debug("攻击副手配置关闭，清除记忆");
-                attackOffHandMem = null;
-            }
+            attackOffHandMem = null;
         }
     }
 
@@ -91,20 +81,14 @@ public class AutoRefill {
         if (config.autoRefillMainHand) {
             managePlaceMainHandMemory(client.player);
         } else {
-            if (placeMainHandMem != null) {
-                Main.LOGGER.debug("放置主手配置关闭，清除记忆");
-                placeMainHandMem = null;
-            }
+            placeMainHandMem = null;
         }
 
         // 处理副手
         if (config.autoRefillOffHand) {
             managePlaceOffHandMemory(client.player);
         } else {
-            if (placeOffHandMem != null) {
-                Main.LOGGER.debug("放置副手配置关闭，清除记忆");
-                placeOffHandMem = null;
-            }
+            placeOffHandMem = null;
         }
     }
 
@@ -114,35 +98,25 @@ public class AutoRefill {
     private void manageAttackMainHandMemory(LocalPlayer player) {
         int currentSlot = SelectedSlotHelper.getSelectedSlot();
         ItemStack currentItem = SelectedSlotHelper.getMainHandItem();
+        var config = ConfigManager.getConfig();
 
         if (attackMainHandMem == null) {
             // 没有记忆，写入新记忆
             if (!currentItem.isEmpty()) {
                 attackMainHandMem = new Memory(currentItem, currentSlot);
-                Main.LOGGER.debug("攻击主手写入新记忆: {} 槽位: {}",
-                        currentItem.getItem(), currentSlot);
             }
         } else {
-            // 有记忆，检查主手是否为空
-            if (currentItem.isEmpty()) {
-                // 主手为空，尝试补充
-                Main.LOGGER.debug("攻击主手为空，尝试补充");
+            // 有记忆，检查是否需要补充
+            if (shouldRefill(currentItem, attackMainHandMem.item, config)) {
                 boolean success = refillSlot(player, attackMainHandMem, currentSlot);
-
                 if (success) {
-                    // 补充成功，重新写入记忆
                     ItemStack newItem = SelectedSlotHelper.getMainHandItem();
                     attackMainHandMem.update(newItem);
-                    attackMainHandMem.slot = currentSlot; // 更新槽位（可能切换了快捷栏）
-                    Main.LOGGER.debug("攻击主手补充成功，更新记忆: {}", newItem.getItem());
+                    attackMainHandMem.slot = currentSlot;
                 }
-            } else {
-                // 主手不为空，检查物品类型是否变化
-                if (!attackMainHandMem.isSameType(currentItem)) {
-                    // 物品已手动更换，更新记忆
-                    attackMainHandMem = new Memory(currentItem, currentSlot);
-                    Main.LOGGER.debug("攻击主手物品更换，更新记忆: {}", currentItem.getItem());
-                }
+            } else if (!currentItem.isEmpty() && !attackMainHandMem.isSameType(currentItem)) {
+                // 物品已手动更换，更新记忆
+                attackMainHandMem = new Memory(currentItem, currentSlot);
             }
         }
     }
@@ -152,33 +126,24 @@ public class AutoRefill {
      */
     private void manageAttackOffHandMemory(LocalPlayer player) {
         ItemStack currentItem = SelectedSlotHelper.getOffHandItem();
+        var config = ConfigManager.getConfig();
 
         if (attackOffHandMem == null) {
             // 没有记忆，写入新记忆
             if (!currentItem.isEmpty()) {
                 attackOffHandMem = new Memory(currentItem, OFFHAND_SLOT);
-                Main.LOGGER.debug("攻击副手写入新记忆: {}", currentItem.getItem());
             }
         } else {
-            // 有记忆，检查副手是否为空
-            if (currentItem.isEmpty()) {
-                // 副手为空，尝试补充
-                Main.LOGGER.debug("攻击副手为空，尝试补充");
+            // 有记忆，检查是否需要补充
+            if (shouldRefill(currentItem, attackOffHandMem.item, config)) {
                 boolean success = refillSlot(player, attackOffHandMem, OFFHAND_SLOT);
-
                 if (success) {
-                    // 补充成功，重新写入记忆
                     ItemStack newItem = SelectedSlotHelper.getOffHandItem();
                     attackOffHandMem.update(newItem);
-                    Main.LOGGER.debug("攻击副手补充成功，更新记忆: {}", newItem.getItem());
                 }
-            } else {
-                // 副手不为空，检查物品类型是否变化
-                if (!attackOffHandMem.isSameType(currentItem)) {
-                    // 物品已手动更换，更新记忆
-                    attackOffHandMem = new Memory(currentItem, OFFHAND_SLOT);
-                    Main.LOGGER.debug("攻击副手物品更换，更新记忆: {}", currentItem.getItem());
-                }
+            } else if (!currentItem.isEmpty() && !attackOffHandMem.isSameType(currentItem)) {
+                // 物品已手动更换，更新记忆
+                attackOffHandMem = new Memory(currentItem, OFFHAND_SLOT);
             }
         }
     }
@@ -189,29 +154,25 @@ public class AutoRefill {
     private void managePlaceMainHandMemory(LocalPlayer player) {
         int currentSlot = SelectedSlotHelper.getSelectedSlot();
         ItemStack currentItem = SelectedSlotHelper.getMainHandItem();
+        var config = ConfigManager.getConfig();
 
         if (placeMainHandMem == null) {
+            // 没有记忆，写入新记忆
             if (!currentItem.isEmpty()) {
                 placeMainHandMem = new Memory(currentItem, currentSlot);
-                Main.LOGGER.debug("放置主手写入新记忆: {} 槽位: {}",
-                        currentItem.getItem(), currentSlot);
             }
         } else {
-            if (currentItem.isEmpty()) {
-                Main.LOGGER.debug("放置主手为空，尝试补充");
+            // 有记忆，检查是否需要补充
+            if (shouldRefill(currentItem, placeMainHandMem.item, config)) {
                 boolean success = refillSlot(player, placeMainHandMem, currentSlot);
-
                 if (success) {
                     ItemStack newItem = SelectedSlotHelper.getMainHandItem();
                     placeMainHandMem.update(newItem);
                     placeMainHandMem.slot = currentSlot;
-                    Main.LOGGER.debug("放置主手补充成功，更新记忆: {}", newItem.getItem());
                 }
-            } else {
-                if (!placeMainHandMem.isSameType(currentItem)) {
-                    placeMainHandMem = new Memory(currentItem, currentSlot);
-                    Main.LOGGER.debug("放置主手物品更换，更新记忆: {}", currentItem.getItem());
-                }
+            } else if (!currentItem.isEmpty() && !placeMainHandMem.isSameType(currentItem)) {
+                // 物品已手动更换，更新记忆
+                placeMainHandMem = new Memory(currentItem, currentSlot);
             }
         }
     }
@@ -221,29 +182,59 @@ public class AutoRefill {
      */
     private void managePlaceOffHandMemory(LocalPlayer player) {
         ItemStack currentItem = SelectedSlotHelper.getOffHandItem();
+        var config = ConfigManager.getConfig();
 
         if (placeOffHandMem == null) {
+            // 没有记忆，写入新记忆
             if (!currentItem.isEmpty()) {
                 placeOffHandMem = new Memory(currentItem, OFFHAND_SLOT);
-                Main.LOGGER.debug("放置副手写入新记忆: {}", currentItem.getItem());
             }
         } else {
-            if (currentItem.isEmpty()) {
-                Main.LOGGER.debug("放置副手为空，尝试补充");
+            // 有记忆，检查是否需要补充
+            if (shouldRefill(currentItem, placeOffHandMem.item, config)) {
                 boolean success = refillSlot(player, placeOffHandMem, OFFHAND_SLOT);
-
                 if (success) {
                     ItemStack newItem = SelectedSlotHelper.getOffHandItem();
                     placeOffHandMem.update(newItem);
-                    Main.LOGGER.debug("放置副手补充成功，更新记忆: {}", newItem.getItem());
                 }
-            } else {
-                if (!placeOffHandMem.isSameType(currentItem)) {
-                    placeOffHandMem = new Memory(currentItem, OFFHAND_SLOT);
-                    Main.LOGGER.debug("放置副手物品更换，更新记忆: {}", currentItem.getItem());
-                }
+            } else if (!currentItem.isEmpty() && !placeOffHandMem.isSameType(currentItem)) {
+                // 物品已手动更换，更新记忆
+                placeOffHandMem = new Memory(currentItem, OFFHAND_SLOT);
             }
         }
+    }
+
+    /**
+     * 判断是否需要补充物品
+     */
+    private boolean shouldRefill(ItemStack currentItem, ItemStack targetItem, com.example.autoclicker.config.Config config) {
+        // 当前槽位为空，需要补充
+        if (currentItem.isEmpty()) {
+            return true;
+        }
+
+        // 当前物品类型与记忆中的不同，不需要补充（等待物品更换逻辑处理）
+        if (currentItem.getItem() != targetItem.getItem()) {
+            return false;
+        }
+
+        // 检查数量阈值
+        if (config.refillCountThreshold > 0) {
+            if (currentItem.getCount() <= config.refillCountThreshold) {
+                return true;
+            }
+        }
+
+        // 检查耐久阈值（仅对可损坏物品）
+        if (config.refillDurabilityThreshold > 0 && currentItem.isDamageableItem()) {
+            int maxDamage = currentItem.getMaxDamage();
+            int currentDamage = currentItem.getDamageValue();
+            int remainingPercent = (int) ((maxDamage - currentDamage) * 100.0 / maxDamage);
+
+            return remainingPercent <= config.refillDurabilityThreshold;
+        }
+
+        return false;
     }
 
     /**
@@ -263,31 +254,25 @@ public class AutoRefill {
             String itemName = memory.item.getHoverName().getString();
             Main.sendMessage("autoclicker.message.no_items_left",
                     Component.literal(itemName));
-            Main.LOGGER.warn("背包中没有可补充的物品: {}", itemName);
             return false;
         }
 
         try {
-            // 统一使用 SWAP，button 直接传目标槽位
             mc.gameMode.handleInventoryMouseClick(
                     player.containerMenu.containerId,
                     sourceSlot,
-                    targetSlot,  // button：快捷栏槽位(0-8)或副手槽位(40)
+                    targetSlot,
                     ClickType.SWAP,
                     player
             );
-
-            Main.LOGGER.info("成功交换物品到槽位: {}", targetSlot);
             return true;
-
         } catch (Exception e) {
-            Main.LOGGER.error("补充物品失败", e);
             return false;
         }
     }
 
     /**
-     * 在快捷栏中查找指定物品
+     * 在背包中查找指定物品
      */
     private int findSourceSlot(Inventory inv, ItemStack target, int excludeSlot) {
         // 1. 优先从背包找（9-35）
@@ -307,10 +292,9 @@ public class AutoRefill {
                     return i;
                 }
             }
-            // 主手不从副手拿，避免循环
         }
 
-        // 3. 如果目标是副手，可以从快捷栏找（包括主手），但不能从副手本身拿
+        // 3. 如果目标是副手，可以从快捷栏找（包括主手）
         if (excludeSlot == OFFHAND_SLOT) {
             for (int i = 0; i <= 8; i++) {
                 ItemStack stack = inv.getItem(i);
@@ -318,7 +302,6 @@ public class AutoRefill {
                     return i;
                 }
             }
-            // 副手不从副手拿（已经排除了）
         }
 
         return -1;
@@ -330,7 +313,6 @@ public class AutoRefill {
     public void clearAttackMemory() {
         attackMainHandMem = null;
         attackOffHandMem = null;
-        Main.LOGGER.debug("清除攻击记忆");
     }
 
     /**
@@ -339,6 +321,5 @@ public class AutoRefill {
     public void clearPlaceMemory() {
         placeMainHandMem = null;
         placeOffHandMem = null;
-        Main.LOGGER.debug("清除放置记忆");
     }
 }
