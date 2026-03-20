@@ -5,6 +5,7 @@ import com.example.autoclicker.config.ConfigManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.*;
@@ -276,7 +277,7 @@ public class AutoClicker {
             }
 
             // ===== 2. 种植逻辑 =====
-            // 检查手持物品是否为种子/可种植物品
+// 检查手持物品是否为种子/可种植物品
             ItemStack seedItem = ItemStack.EMPTY;
             InteractionHand hand = null;
 
@@ -290,8 +291,21 @@ public class AutoClicker {
 
             if (seedItem.isEmpty()) return false;
 
-            // 检查瞄准的方块是否为种植土
+        // 检查瞄准的方块是否为种植土
             if (state != null && isPlantableSoil(state.getBlock())) {
+                // 检查菌岩与菌类的匹配性
+                Block targetBlock = state.getBlock();
+                Item seedItemType = seedItem.getItem();
+
+                // 绯红菌岩只能种绯红菌
+                if (targetBlock == Blocks.CRIMSON_NYLIUM && seedItemType != Items.CRIMSON_FUNGUS) {
+                    return false;
+                }
+                // 诡异菌岩只能种诡异菌
+                if (targetBlock == Blocks.WARPED_NYLIUM && seedItemType != Items.WARPED_FUNGUS) {
+                    return false;
+                }
+
                 if (hand != null) {
                     InteractionResult result = client.gameMode.useItemOn(client.player, hand, blockHit);
                     if (result.consumesAction()) {
