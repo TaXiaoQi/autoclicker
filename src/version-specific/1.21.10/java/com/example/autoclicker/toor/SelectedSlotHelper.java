@@ -41,17 +41,4 @@ public class SelectedSlotHelper {
         return player.getOffhandItem();
     }
 
-    /**
-     * 获取指定槽位的物品
-     */
-    public static ItemStack getItemInSlot(int slot) {
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null) return ItemStack.EMPTY;
-
-        if (slot == 40) { // 副手
-            return player.getOffhandItem();
-        } else {
-            return player.getInventory().getItem(slot);
-        }
-    }
 }

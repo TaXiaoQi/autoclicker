@@ -42,8 +42,6 @@ public class AutoRefill {
     private Memory placeOffHandMem = null;
 
     private static final int OFFHAND_SLOT = 40;
-    private static final int HOTBAR_START = 0;
-    private static final int HOTBAR_END = 8;
 
     /**
      * 第一步：主入口方法 - 攻击功能使用后调用
@@ -257,18 +255,11 @@ public class AutoRefill {
         if (mc.gameMode == null) return false;
 
         Inventory inv = player.getInventory();
-        int windowId = player.containerMenu.containerId;
 
-        // 优先从快捷栏找（0-8）
-        int sourceSlot = findItemInHotbar(inv, memory.item);
-
-        // 如果快捷栏没有，从背包找（9-35）
-        if (sourceSlot == -1) {
-            sourceSlot = findItemInInventory(inv, memory.item);
-        }
+        // 查找可补充的物品（排除目标槽位本身）
+        int sourceSlot = findSourceSlot(inv, memory.item, targetSlot);
 
         if (sourceSlot == -1) {
-            // 没有找到可补充的物品，发送提示
             String itemName = memory.item.getHoverName().getString();
             Main.sendMessage("autoclicker.message.no_items_left",
                     Component.literal(itemName));
@@ -276,20 +267,17 @@ public class AutoRefill {
             return false;
         }
 
-        // 执行交换
         try {
-            // 左键点击源槽位（拿起物品）
-            mc.gameMode.handleInventoryMouseClick(windowId, sourceSlot, 0, ClickType.PICKUP, player);
+            // 统一使用 SWAP，button 直接传目标槽位
+            mc.gameMode.handleInventoryMouseClick(
+                    player.containerMenu.containerId,
+                    sourceSlot,
+                    targetSlot,  // button：快捷栏槽位(0-8)或副手槽位(40)
+                    ClickType.SWAP,
+                    player
+            );
 
-            // 左键点击目标槽位（放下物品）
-            mc.gameMode.handleInventoryMouseClick(windowId, targetSlot, 0, ClickType.PICKUP, player);
-
-            // 如果手上还有物品（可能是堆叠物品），放回源槽位
-            if (!player.containerMenu.getCarried().isEmpty()) {
-                mc.gameMode.handleInventoryMouseClick(windowId, sourceSlot, 0, ClickType.PICKUP, player);
-            }
-
-            Main.LOGGER.info("成功补充物品到槽位: {}", targetSlot);
+            Main.LOGGER.info("成功交换物品到槽位: {}", targetSlot);
             return true;
 
         } catch (Exception e) {
@@ -301,27 +289,38 @@ public class AutoRefill {
     /**
      * 在快捷栏中查找指定物品
      */
-    private int findItemInHotbar(Inventory inv, ItemStack target) {
-        for (int i = HOTBAR_START; i <= HOTBAR_END; i++) {
-            ItemStack stack = inv.getItem(i);
-            if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * 在背包中查找指定物品（不包括快捷栏和盔甲槽）
-     */
-    private int findItemInInventory(Inventory inv, ItemStack target) {
-        // 背包槽位 9-35
+    private int findSourceSlot(Inventory inv, ItemStack target, int excludeSlot) {
+        // 1. 优先从背包找（9-35）
         for (int i = 9; i < 36; i++) {
             ItemStack stack = inv.getItem(i);
             if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
                 return i;
             }
         }
+
+        // 2. 如果目标是主手（快捷栏），可以从其他快捷栏找，但不能从副手拿
+        if (excludeSlot >= 0 && excludeSlot <= 8) {
+            for (int i = 0; i <= 8; i++) {
+                if (i == excludeSlot) continue;
+                ItemStack stack = inv.getItem(i);
+                if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
+                    return i;
+                }
+            }
+            // 主手不从副手拿，避免循环
+        }
+
+        // 3. 如果目标是副手，可以从快捷栏找（包括主手），但不能从副手本身拿
+        if (excludeSlot == OFFHAND_SLOT) {
+            for (int i = 0; i <= 8; i++) {
+                ItemStack stack = inv.getItem(i);
+                if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
+                    return i;
+                }
+            }
+            // 副手不从副手拿（已经排除了）
+        }
+
         return -1;
     }
 
@@ -341,13 +340,5 @@ public class AutoRefill {
         placeMainHandMem = null;
         placeOffHandMem = null;
         Main.LOGGER.debug("清除放置记忆");
-    }
-
-    /**
-     * 清除所有记忆
-     */
-    public void clearAllMemory() {
-        clearAttackMemory();
-        clearPlaceMemory();
     }
 }

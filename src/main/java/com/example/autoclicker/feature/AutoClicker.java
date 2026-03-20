@@ -69,7 +69,8 @@ public class AutoClicker {
                     attackCooldown = getAttackCooldown();
                     lastSuccessfulAttackTime = levelTime;
                     Main.LOGGER.debug("攻击成功，更新时间戳：{}", lastSuccessfulAttackTime);
-
+                    // 攻击成功，调用补充检测
+                    autoRefill.onAttackUsed();
                 }
             }
         }
@@ -84,7 +85,8 @@ public class AutoClicker {
                     lastSuccessfulPlaceTime = levelTime;
                     Main.LOGGER.debug("放置成功，更新时间戳：{}", lastSuccessfulPlaceTime);
 
-                    autoRefill.onAttackUsed();
+                    // 调用自动补充检测
+                    autoRefill.onPlaceUsed();
                 }
             }
         }
@@ -181,7 +183,6 @@ public class AutoClicker {
             if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && config.attackArmorStands) {
                 client.gameMode.attack(client.player, entity);
                 client.player.swing(InteractionHand.MAIN_HAND);
-                autoRefill.onAttackUsed();  // ✅ 攻击成功，更新状态
                 return true;
             }
 
@@ -191,14 +192,12 @@ public class AutoClicker {
                 if (category == net.minecraft.world.entity.MobCategory.MONSTER && config.attackHostileMobs) {
                     client.gameMode.attack(client.player, entity);
                     client.player.swing(InteractionHand.MAIN_HAND);
-                    autoRefill.onAttackUsed();  // ✅ 攻击成功，更新状态
                     return true;
                 }
                 // 攻击中立生物
                 if (category == net.minecraft.world.entity.MobCategory.CREATURE && config.attackNeutralMobs) {
                     client.gameMode.attack(client.player, entity);
                     client.player.swing(InteractionHand.MAIN_HAND);
-                    autoRefill.onAttackUsed();  // ✅ 攻击成功，更新状态
                     return true;
                 }
             }
@@ -242,14 +241,12 @@ public class AutoClicker {
                         InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
                         if (result.consumesAction()) {
                             client.player.swing(InteractionHand.MAIN_HAND);
-                            autoRefill.onPlaceUsed();  // ✅ 放置成功，更新状态
                             return true;
                         }
                     } else if (offHandItem.getItem() == Items.BONE_MEAL) {
                         InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
                         if (result.consumesAction()) {
                             client.player.swing(InteractionHand.OFF_HAND);
-                            autoRefill.onPlaceUsed();  // ✅ 放置成功，更新状态
                             return true;
                         }
                     }
@@ -277,7 +274,6 @@ public class AutoClicker {
                     InteractionResult result = client.gameMode.useItemOn(client.player, hand, blockHit);
                     if (result.consumesAction()) {
                         client.player.swing(hand);
-                        autoRefill.onPlaceUsed();  // ✅ 放置成功，更新状态
                         return true;
                     }
                 }
