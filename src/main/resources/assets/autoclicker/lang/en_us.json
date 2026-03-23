@@ -73,5 +73,8 @@
   "config.auto_disable_place": "Auto Disable Place on Timeout",
   "config.auto_disable_place.tooltip": "Automatically disable auto place after no operation for set time",
   "config.auto_disable_timeout": "Timeout (seconds)",
-  "config.auto_disable_timeout.tooltip": "Time in seconds before auto disable\nRange: 1-240 seconds"
+  "config.auto_disable_timeout.tooltip": "Time in seconds before auto disable\nRange: 1-240 seconds",
+
+  "autoclicker.message.no_items_left": "No %s left in inventory!",
+  "autoclicker.message.refill_failed": "Failed to refill item!"
 }

@@ -252,6 +252,7 @@ public class AutoRefill {
 
         if (sourceSlot == -1) {
             String itemName = memory.item.getHoverName().getString();
+            // 使用多语言消息，参数为物品名称
             Main.sendMessage("autoclicker.message.no_items_left",
                     Component.literal(itemName));
             return false;
@@ -267,6 +268,8 @@ public class AutoRefill {
             );
             return true;
         } catch (Exception e) {
+            // 补充失败时也发送多语言消息
+            Main.sendMessage("autoclicker.message.refill_failed");
             return false;
         }
     }

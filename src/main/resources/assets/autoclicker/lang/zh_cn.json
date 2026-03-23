@@ -73,5 +73,8 @@
   "config.auto_disable_place": "自动放置超时关闭",
   "config.auto_disable_place.tooltip": "无放置操作超过设定时间后自动关闭自动放置",
   "config.auto_disable_timeout": "超时时间（秒）",
-  "config.auto_disable_timeout.tooltip": "设置无操作多少秒后自动关闭功能\n范围：1-240秒"
+  "config.auto_disable_timeout.tooltip": "设置无操作多少秒后自动关闭功能\n范围：1-240秒",
+
+  "autoclicker.message.no_items_left": "背包中没有%s了！",
+  "autoclicker.message.refill_failed": "补充物品失败！"
 }

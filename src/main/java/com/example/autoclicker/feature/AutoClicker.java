@@ -291,20 +291,21 @@ public class AutoClicker {
 
             if (seedItem.isEmpty()) return false;
 
-        // 检查瞄准的方块是否为种植土
+// 检查瞄准的方块是否为种植土
             if (state != null && isPlantableSoil(state.getBlock())) {
-                // 检查菌岩与菌类的匹配性
                 Block targetBlock = state.getBlock();
                 Item seedItemType = seedItem.getItem();
 
-                // 绯红菌岩只能种绯红菌
-                if (targetBlock == Blocks.CRIMSON_NYLIUM && seedItemType != Items.CRIMSON_FUNGUS) {
+                // 绯红菌只能种在绯红菌岩上
+                if (seedItemType == Items.CRIMSON_FUNGUS && targetBlock != Blocks.CRIMSON_NYLIUM) {
                     return false;
                 }
-                // 诡异菌岩只能种诡异菌
-                if (targetBlock == Blocks.WARPED_NYLIUM && seedItemType != Items.WARPED_FUNGUS) {
+                // 诡异菌只能种在诡异菌岩上
+                if (seedItemType == Items.WARPED_FUNGUS && targetBlock != Blocks.WARPED_NYLIUM) {
                     return false;
                 }
+                // 其他可种植物品（包括绯红菌和诡异菌以外的物品）正常检查种植土
+                // 这里不需要额外条件，因为isPlantableSoil已经过滤了大部分方块
 
                 if (hand != null) {
                     InteractionResult result = client.gameMode.useItemOn(client.player, hand, blockHit);
