@@ -1,17 +1,14 @@
 package com.example.autoclicker.feature;
 
-import com.example.autoclicker.Main;
 import com.example.autoclicker.config.ConfigManager;
+import com.example.autoclicker.toor.Replace;
 import com.example.autoclicker.toor.SelectedSlotHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.network.chat.Component;
 
 public class AutoRefill {
-
+    private final Replace replacer = new Replace();
     // 记忆数据结构
     private static class Memory {
         ItemStack item;     // 物品
@@ -24,6 +21,7 @@ public class AutoRefill {
             this.enabled = true;
         }
 
+        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
         boolean isSameType(ItemStack stack) {
             return !stack.isEmpty() && stack.getItem() == item.getItem();
         }
@@ -237,77 +235,8 @@ public class AutoRefill {
         return false;
     }
 
-    /**
-     * 第三步：补充物品到指定槽位
-     * @return true=补充成功, false=补充失败
-     */
     private boolean refillSlot(LocalPlayer player, Memory memory, int targetSlot) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.gameMode == null) return false;
-
-        Inventory inv = player.getInventory();
-
-        // 查找可补充的物品（排除目标槽位本身）
-        int sourceSlot = findSourceSlot(inv, memory.item, targetSlot);
-
-        if (sourceSlot == -1) {
-            String itemName = memory.item.getHoverName().getString();
-            // 使用多语言消息，参数为物品名称
-            Main.sendMessage("autoclicker.message.no_items_left",
-                    Component.literal(itemName));
-            return false;
-        }
-
-        try {
-            mc.gameMode.handleInventoryMouseClick(
-                    player.containerMenu.containerId,
-                    sourceSlot,
-                    targetSlot,
-                    ClickType.SWAP,
-                    player
-            );
-            return true;
-        } catch (Exception e) {
-            // 补充失败时也发送多语言消息
-            Main.sendMessage("autoclicker.message.refill_failed");
-            return false;
-        }
-    }
-
-    /**
-     * 在背包中查找指定物品
-     */
-    private int findSourceSlot(Inventory inv, ItemStack target, int excludeSlot) {
-        // 1. 优先从背包找（9-35）
-        for (int i = 9; i < 36; i++) {
-            ItemStack stack = inv.getItem(i);
-            if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                return i;
-            }
-        }
-
-        // 2. 如果目标是主手（快捷栏），可以从其他快捷栏找，但不能从副手拿
-        if (excludeSlot >= 0 && excludeSlot <= 8) {
-            for (int i = 0; i <= 8; i++) {
-                if (i == excludeSlot) continue;
-                ItemStack stack = inv.getItem(i);
-                if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                    return i;
-                }
-            }
-        }
-
-        // 3. 如果目标是副手，可以从快捷栏找（包括主手）
-        if (excludeSlot == OFFHAND_SLOT) {
-            for (int i = 0; i <= 8; i++) {
-                ItemStack stack = inv.getItem(i);
-                if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                    return i;
-                }
-            }
-        }
-
-        return -1;
+        return replacer.refillSlot(player, memory.item, targetSlot);
     }
 
     /**
