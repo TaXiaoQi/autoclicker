@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.14-SNAPSHOT' apply false
+    id 'fabric-loom' version '1.16-SNAPSHOT' apply false
 }
 
 // 读取版本属性文件
@@ -19,7 +19,15 @@ println "使用模组版本: ${modVersion}"
 
 // MC 版本对应的Fabric api
 def fabricApiVersions = [
-        "1.21.1": "0.116.7+1.21.1",
+        "1.20": "0.83.0+1.20",
+        "1.20.1": "0.92.7+1.20.1",
+        "1.20.2": "0.91.6+1.20.2",
+        "1.20.3": "0.91.1+1.20.3",
+        "1.20.4": "0.97.3+1.20.4",
+        "1.20.5": "0.97.8+1.20.5",
+        "1.20.6": "0.100.8+1.20.6",
+        "1.21": "0.102.0+1.21",
+        "1.21.1": "0.116.10+1.21.1",
         "1.21.2": "0.106.1+1.21.2",
         "1.21.3": "0.114.1+1.21.3",
         "1.21.4": "0.119.4+1.21.4",
@@ -29,30 +37,71 @@ def fabricApiVersions = [
         "1.21.8": "0.136.1+1.21.8",
         "1.21.9": "0.134.1+1.21.9",
         "1.21.10": "0.138.4+1.21.10",
-        "1.21.11": "0.140.2+1.21.11"
+        "1.21.11": "0.140.2+1.21.11",
+        "26.1": "0.145.1+26.1",
+        "26.1.1": "0.145.4+26.1.1",
+        "26.1.2": "0.145.4+26.1.2"
+]
+
+// MC 版本对应的 Mod Menu 版本
+def modMenuVersions = [
+        "1.20": "7.2.2",
+        "1.20.1": "7.2.2",
+        "1.20.2": "7.2.2",
+        "1.20.3": "7.2.2",
+        "1.20.4": "7.2.2",
+        "1.20.5": "7.2.2",
+        "1.20.6": "7.2.2",
+        "1.21": "7.2.2",
+        "1.21.1": "7.2.2",
+        "1.21.2": "7.2.2",
+        "1.21.3": "7.2.2",
+        "1.21.4": "7.2.2",
+        "1.21.5": "14.0.0",
+        "1.21.6": "14.0.0",
+        "1.21.7": "14.0.0",
+        "1.21.8": "15.0.2",
+        "1.21.9": "16.0.1",
+        "1.21.10": "16.0.1",
+        "1.21.11": "17.0.0",
+        "26.1": "18.0.0-alpha.8",
+        "26.1.1": "18.0.0-alpha.8",
+        "26.1.2": "18.0.0-alpha.8"
 ]
 
 // 版本分组映射
 def getVersionGroup = { mcVersion ->
-    switch (mcVersion) {
-        case "1.21.11":
-            return "1.21.11"
-        case "1.21.10":
-            return "1.21.10"
-        case "1.21.9":
-            return "1.21.9"
-        case ~/1\.21\.[1-4]/:
-            return "1.21.1-1.21.4"
-        case ~/1\.21\.[5-8]/:
-            return "1.21.5-1.21.8"
-        default:
-            throw new GradleException("Unknown version: ${mcVersion}")
+    if (mcVersion ==~ /1\.20(?:\.[1-6])?/ || mcVersion ==~ /1\.21(?:\.[1-4])?/) {
+        return "1.20-1.21.4"
     }
+    if (mcVersion ==~ /1\.21\.[5-8]/) {
+        return "1.21.5-1.21.8"
+    }
+    if (mcVersion ==~ /1\.21\.9/) {
+        return "1.21.9"
+    }
+    if (mcVersion ==~ /1\.21\.10/) {
+        return "1.21.10"
+    }
+    if (mcVersion ==~ /1\.21\.11/) {
+        return "1.21.11"
+    }
+    if (mcVersion ==~ /26\.1(?:\.[1-2])?/) {
+        return "26.1"
+    }
+    throw new GradleException("Unknown version: ${mcVersion}")
+}
+
+// 根据 Minecraft 版本返回对应的 Java 版本
+def getJavaVersionForMc = { mcVersion ->
+    if (mcVersion.startsWith('1.20')) return 21
+    if (mcVersion.startsWith('1.21')) return 21
+    if (mcVersion.startsWith('26')) return 25
+    return 21 // 默认
 }
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'fabric-loom'
     apply plugin: 'maven-publish'
 
     // 从根项目继承模组版本
@@ -60,9 +109,13 @@ subprojects {
     project.group = "com.example.autoclicker"
 
     def mcVersion = project.name
+    def isModern = mcVersion.startsWith('26')
 
-    if (!fabricApiVersions.containsKey(mcVersion)) {
-        throw new GradleException("Unsupported Minecraft version: ${mcVersion}. Add it to fabricApiVersions.")
+    // 根据版本应用不同的 Loom 插件
+    if (isModern) {
+        apply plugin: 'net.fabricmc.fabric-loom'
+    } else {
+        apply plugin: 'net.fabricmc.fabric-loom-remap'
     }
 
     // 定义用于资源处理的变量
@@ -73,16 +126,51 @@ subprojects {
 
     repositories {
         maven { url "https://maven.fabricmc.net/" }
-        maven { url "https://maven.terraformersmc.com/releases/" }
+        // 添加 Mod Menu 的官方 Maven 仓库
+        maven {
+            name = "TerraformersMC"
+            url = "https://maven.terraformersmc.com/releases"
+        }
+        // 如果 alpha 版本在快照仓库，也可能需要这个
+        maven {
+            name = "TerraformersMC Snapshots"
+            url = "https://maven.terraformersmc.com/snapshots"
+        }
         mavenCentral()
     }
 
     dependencies {
         minecraft "com.mojang:minecraft:${mcVersion}"
-        mappings loom.layered() { officialMojangMappings() }
-        modImplementation "net.fabricmc:fabric-loader:0.18.0"
-        modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersions[mcVersion]}"
-        modImplementation "com.terraformersmc:modmenu:7.2.2"
+
+        if (!isModern) {
+            mappings loom.officialMojangMappings()
+        }
+
+        def modMenuVersion = modMenuVersions[mcVersion]
+
+        if (isModern) {
+            implementation "net.fabricmc:fabric-loader:0.18.4"
+            implementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersions[mcVersion]}"
+            implementation "com.terraformersmc:modmenu:${modMenuVersion}"
+        } else {
+            modImplementation "net.fabricmc:fabric-loader:0.18.4"
+            modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersions[mcVersion]}"
+            modImplementation "com.terraformersmc:modmenu:${modMenuVersion}"
+        }
+    }
+
+    // 配置java
+    def javaVersion = getJavaVersionForMc(mcVersion)
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(javaVersion)
+        }
+        sourceCompatibility = JavaVersion.toVersion(javaVersion)
+        targetCompatibility = JavaVersion.toVersion(javaVersion)
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.release = javaVersion
     }
 
     // 使用版本组
@@ -100,15 +188,6 @@ subprojects {
         output.resourcesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
     }
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-
-    tasks.withType(JavaCompile).configureEach {
-        options.release = 21
-    }
-
     // 添加文件监视，当 version.properties 变化时重新处理资源
     def versionPropertiesFile = file("$rootDir/gradle/version.properties")
 
@@ -118,7 +197,7 @@ subprojects {
 
         inputs.property "version", fullVersion
         inputs.property "minecraft_version", mcVersion
-        inputs.property "java_version", 21
+        inputs.property "java_version", getJavaVersionForMc(mcVersion)
 
         // 添加构建时间戳，确保每次构建都不同（可选）
         inputs.property "build_timestamp", System.currentTimeMillis()
@@ -127,27 +206,43 @@ subprojects {
             expand([
                     "version": fullVersion,
                     "minecraft_version": mcVersion,
-                    "java_version": 21
+                    "java_version": getJavaVersionForMc(mcVersion)
             ])
         }
     }
 
-    tasks.named('remapJar') {
-        archiveBaseName = "Autoclicker"
-        archiveVersion = "${modVersion}+${mcVersion}"
-    }
-
-    def outputDir = rootProject.layout.projectDirectory.dir("dist")
-    def outputFileName = "Autoclicker-${modVersion}+${mcVersion}.jar"
-
-    tasks.register('copyBuild', Copy) {
-        description = "Copy remapped JAR to root dist directory"
-        group = "build"
-
-        dependsOn tasks.named('remapJar')
-        from(tasks.named('remapJar').map { it.archiveFile })
-        into(outputDir)
-        rename { outputFileName }
+    // 根据版本选择不同的打包任务
+    if (isModern) {
+        tasks.named('jar') {
+            archiveBaseName = "Autoclicker"
+            archiveVersion = "${modVersion}+${mcVersion}"
+        }
+        def outputDir = rootProject.layout.projectDirectory.dir("dist")
+        def outputFileName = "Autoclicker-${modVersion}+${mcVersion}.jar"
+        tasks.register('copyBuild', Copy) {
+            description = "Copy JAR to root dist directory"
+            group = "build"
+            dependsOn tasks.named('jar')
+            from(tasks.named('jar').map { it.archiveFile })
+            into(outputDir)
+            rename { outputFileName }
+        }
+    } else {
+        // 对于旧版本，可以继续使用 remapJar
+        tasks.named('remapJar') {
+            archiveBaseName = "Autoclicker"
+            archiveVersion = "${modVersion}+${mcVersion}"
+        }
+        def outputDir = rootProject.layout.projectDirectory.dir("dist")
+        def outputFileName = "Autoclicker-${modVersion}+${mcVersion}.jar"
+        tasks.register('copyBuild', Copy) {
+            description = "Copy remapped JAR to root dist directory"
+            group = "build"
+            dependsOn tasks.named('remapJar')
+            from(tasks.named('remapJar').map { it.archiveFile })
+            into(outputDir)
+            rename { outputFileName }
+        }
     }
 
     tasks.named('build') {
@@ -172,10 +267,50 @@ tasks.register('buildAllVersions') {
     group = 'build'
     description = 'Build all supported Minecraft versions sequentially'
 
-    // 使用 dependsOn 链
+    // 从 1.20 系列开始
+    dependsOn ':1.20:build'
+
+    project(':1.20.1').tasks.named('build').configure {
+        mustRunAfter ':1.20:build'
+    }
+    dependsOn ':1.20.1:build'
+
+    project(':1.20.2').tasks.named('build').configure {
+        mustRunAfter ':1.20.1:build'
+    }
+    dependsOn ':1.20.2:build'
+
+    project(':1.20.3').tasks.named('build').configure {
+        mustRunAfter ':1.20.2:build'
+    }
+    dependsOn ':1.20.3:build'
+
+    project(':1.20.4').tasks.named('build').configure {
+        mustRunAfter ':1.20.3:build'
+    }
+    dependsOn ':1.20.4:build'
+
+    project(':1.20.5').tasks.named('build').configure {
+        mustRunAfter ':1.20.4:build'
+    }
+    dependsOn ':1.20.5:build'
+
+    project(':1.20.6').tasks.named('build').configure {
+        mustRunAfter ':1.20.5:build'
+    }
+    dependsOn ':1.20.6:build'
+
+    // 然后 1.21 系列
+    project(':1.21').tasks.named('build').configure {
+        mustRunAfter ':1.20.6:build'
+    }
+    dependsOn ':1.21:build'
+
+    project(':1.21.1').tasks.named('build').configure {
+        mustRunAfter ':1.21:build'
+    }
     dependsOn ':1.21.1:build'
 
-    // 手动配置链式依赖
     project(':1.21.2').tasks.named('build').configure {
         mustRunAfter ':1.21.1:build'
     }
@@ -225,30 +360,20 @@ tasks.register('buildAllVersions') {
         mustRunAfter ':1.21.10:build'
     }
     dependsOn ':1.21.11:build'
-}
 
-// 构建文件输出至指定文件夹
-tasks.register('cleanAll') {
-    group = 'build'
-    description = 'Clean all versions'
-    dependsOn subprojects*.tasks*.clean
-
-    doLast {
-        delete "$rootDir/dist"  // 目的文件夹
+    // 最后是 26.1 系列
+    project(':26.1').tasks.named('build').configure {
+        mustRunAfter ':1.21.11:build'
     }
-}
+    dependsOn ':26.1:build'
 
-// 添加一个只更新所有版本资源文件的任务
-tasks.register('updateAllVersions') {
-    group = 'build'
-    description = 'Update version resources for all versions'
-
-    dependsOn ':1.21.1:updateVersionResources'
-
-    project(':1.21.2').tasks.named('updateVersionResources').configure {
-        mustRunAfter ':1.21.1:updateVersionResources'
+    project(':26.1.1').tasks.named('build').configure {
+        mustRunAfter ':26.1:build'
     }
-    dependsOn ':1.21.2:updateVersionResources'
+    dependsOn ':26.1.1:build'
 
-    // ... 为其他所有版本添加类似的依赖链 ...
+    project(':26.1.2').tasks.named('build').configure {
+        mustRunAfter ':26.1.1:build'
+    }
+    dependsOn ':26.1.2:build'
 }
