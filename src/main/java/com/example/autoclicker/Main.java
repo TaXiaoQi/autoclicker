@@ -33,7 +33,7 @@ public class Main implements ClientModInitializer {
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
             Component message = Component.translatable(translationKey, args);
-            client.player.displayClientMessage(message, true);
+            client.gui.setOverlayMessage(message, false);  // ✅ 快捷栏上方显示
         }
     }
 }

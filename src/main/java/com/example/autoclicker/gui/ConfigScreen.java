@@ -5,13 +5,10 @@ import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.gui.elements.ConfigElement;
 import com.example.autoclicker.gui.elements.IntSliderElement;
 import com.example.autoclicker.toor.ScrollableList;import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,9 +20,9 @@ public class ConfigScreen extends Screen {
 
     private Button doneButton;
 
-    public ConfigScreen(Screen parent) {
+    public ConfigScreen(Object parent) {
         super(Component.translatable("screen.autoclicker.title"));
-        this.parent = parent;
+        this.parent = (Screen) parent;  // 强制转换
         this.config = ConfigManager.getConfig();
     }
 
@@ -381,7 +378,7 @@ public class ConfigScreen extends Screen {
 
         Button cancelButton = Button.builder(
                         Component.translatable("gui.cancel"),
-                        btn -> onClose()
+                        _ -> onClose()
                 )
                 .pos(width / 2 - buttonWidth - spacing / 2, buttonY)
                 .size(buttonWidth, 20)
@@ -390,7 +387,7 @@ public class ConfigScreen extends Screen {
 
         doneButton = Button.builder(
                         Component.translatable("gui.done"),
-                        btn -> saveAndClose()
+                        _ -> saveAndClose()
                 )
                 .pos(width / 2 + spacing / 2, buttonY)
                 .size(buttonWidth, 20)
@@ -405,11 +402,6 @@ public class ConfigScreen extends Screen {
         int textW = font.width(text.getString());
         int x = Math.max(0, (width - textW) / 2);
         list.addChild(new StringWidget(x, y, width, 20, text, font));
-    }
-
-    @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        super.render(guiGraphics, mouseX, mouseY, delta);
     }
 
     @Override
