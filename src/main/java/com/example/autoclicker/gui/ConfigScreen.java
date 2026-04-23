@@ -378,7 +378,7 @@ public class ConfigScreen extends Screen {
 
         Button cancelButton = Button.builder(
                         Component.translatable("gui.cancel"),
-                        _ -> onClose()
+                        btn -> onClose()  // 改用 btn 代替 _
                 )
                 .pos(width / 2 - buttonWidth - spacing / 2, buttonY)
                 .size(buttonWidth, 20)
@@ -387,7 +387,7 @@ public class ConfigScreen extends Screen {
 
         doneButton = Button.builder(
                         Component.translatable("gui.done"),
-                        _ -> saveAndClose()
+                        btn -> saveAndClose()  // 改用 btn 代替 _
                 )
                 .pos(width / 2 + spacing / 2, buttonY)
                 .size(buttonWidth, 20)

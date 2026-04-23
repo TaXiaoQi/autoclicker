@@ -84,7 +84,7 @@ public class EventHandler {
 
         });
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(_ -> handleGameExit());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> handleGameExit());
         ClientPlayConnectionEvents.DISCONNECT.register(EventHandler::onDisconnect);
     }
 
