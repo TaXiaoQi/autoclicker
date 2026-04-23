@@ -12,11 +12,11 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConfigScreen extends Screen {
-    private final Screen parent;
-    private final Config config;
+public abstract class ConfigScreen extends Screen {
+    protected final Screen parent;
+    protected final Config config;
     private final List<ConfigElement<?>> elements = new ArrayList<>();
-    private ScrollableList scrollList;
+    protected ScrollableList scrollList;
 
     private Button doneButton;
 
@@ -26,16 +26,7 @@ public class ConfigScreen extends Screen {
         this.config = ConfigManager.getConfig();
     }
 
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amount, double otherAmount) {
-        if (this.scrollList != null) {
-            // 让滚动列表优先处理滚轮事件
-            if (this.scrollList.isMouseOver(mouseX, mouseY) && this.scrollList.mouseScrolled(mouseX, mouseY, amount, otherAmount)) {
-                return true;
-            }
-        }
-        return super.mouseScrolled(mouseX, mouseY, amount, otherAmount);
-    }
+    protected abstract boolean handleMouseScroll(double mouseX, double mouseY, double... scrollAmounts);
 
     @Override
     protected void init() {

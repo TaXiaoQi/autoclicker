@@ -71,8 +71,11 @@ def modMenuVersions = [
 
 // 版本分组映射
 def getVersionGroup = { mcVersion ->
-    if (mcVersion ==~ /1\.20(?:\.[1-6])?/ || mcVersion ==~ /1\.21(?:\.[1-4])?/) {
-        return "1.20-1.21.4"
+    if (mcVersion == "1.20" || mcVersion == "1.20.1") {
+        return "1.20-1.20.1"
+    }
+    if (mcVersion ==~ /1\.20(?:\.[2-6])?/ || mcVersion ==~ /1\.21(?:\.[1-4])?/) {
+        return "1.20.2-1.21.4"
     }
     if (mcVersion ==~ /1\.21\.[5-8]/) {
         return "1.21.5-1.21.8"

@@ -5,6 +5,7 @@ import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.feature.AutoClicker;
 import com.example.autoclicker.feature.MuteFeature;
 import com.example.autoclicker.gui.ConfigScreen;
+import com.example.autoclicker.toor.ConfigScreenImpl;
 import com.example.autoclicker.toor.KeyBindLoader;
 import com.example.autoclicker.toor.KeyBindLoaderImpl;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -219,7 +220,7 @@ public class EventHandler {
     private static void handleOpenGUIKey() {
         Minecraft client = Minecraft.getInstance();
         if (client.screen == null) {
-            client.setScreen(new ConfigScreen(null));
+            client.setScreen(new ConfigScreenImpl(null));
         }
     }
 
