@@ -31,7 +31,7 @@ public class SliderWidget extends AbstractSliderButton {
     }
 
     public void setActualValue(double value) {
-        value = Math.max(minValue, Math.min(maxValue, value));
+        value = Math.clamp(value, minValue, maxValue);
         this.value = (value - minValue) / (maxValue - minValue);
         updateMessage();
         if (initialized && onChange != null) {
