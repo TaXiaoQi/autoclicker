@@ -11,10 +11,12 @@ public class KeyBindLoaderImpl implements KeyBindLoader {
 
     @Override
     public KeyMapping createKeyBind(String description, InputConstants.Type type, int keyCode) {
+        // 26.1 中 KeyMapping 构造时会自注册
         return new KeyMapping(description, type, keyCode, CATEGORY);
     }
 
     @Override
     public void registerKeyBind(KeyMapping keyMapping) {
+        // 已在构造函数中自动注册
     }
 }

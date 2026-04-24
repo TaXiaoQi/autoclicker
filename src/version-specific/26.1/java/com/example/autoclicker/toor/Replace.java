@@ -30,20 +30,7 @@ public class Replace {
         }
 
         try {
-            if (isHotbarSlot(sourceSlot) && isHotbarSlot(targetSlot)) {
-                swapBetweenHotbar(player, sourceSlot, targetSlot);
-            } else if (sourceSlot == OFFHAND_SLOT || targetSlot == OFFHAND_SLOT) {
-                swapWithOffhand(player, sourceSlot, targetSlot);
-            } else {
-                // 使用新方法名 handleContainerInput
-                mc.gameMode.handleContainerInput(
-                        player.containerMenu.containerId,
-                        sourceSlot,
-                        targetSlot,  // buttonNum
-                        ContainerInput.SWAP,
-                        player
-                );
-            }
+            doSwap(player, sourceSlot, targetSlot);
             return true;
         } catch (Exception e) {
             Main.sendMessage("autoclicker.message.refill_failed");
@@ -51,100 +38,80 @@ public class Replace {
         }
     }
 
-    private int findSourceSlot(Inventory inv, ItemStack target, int excludeSlot) {
-        // 1. 优先从背包找（9-35）
+    private int findSourceSlot(Inventory inv, ItemStack target, int targetSlot) {
+        // 1. 背包（9-35）
         for (int i = 9; i < 36; i++) {
-            ItemStack stack = inv.getItem(i);
-            if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                return i;
-            }
+            if (i == targetSlot) continue;
+            if (matches(inv.getItem(i), target)) return i;
         }
-
-        // 2. 如果目标是主手（快捷栏），可以从其他快捷栏找
-        if (excludeSlot >= 0 && excludeSlot <= 8) {
-            for (int i = 0; i <= 8; i++) {
-                if (i == excludeSlot) continue;
-                ItemStack stack = inv.getItem(i);
-                if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                    return i;
-                }
-            }
+        // 2. 快捷栏（0-8）
+        for (int i = 0; i <= 8; i++) {
+            if (i == targetSlot) continue;
+            if (matches(inv.getItem(i), target)) return i;
         }
-
-        // 3. 如果目标是副手，可以从快捷栏找
-        if (excludeSlot == OFFHAND_SLOT) {
-            for (int i = 0; i <= 8; i++) {
-                ItemStack stack = inv.getItem(i);
-                if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                    return i;
-                }
-            }
+        // 3. 副手（40）
+        if (targetSlot != OFFHAND_SLOT && matches(inv.getItem(OFFHAND_SLOT), target)) {
+            return OFFHAND_SLOT;
         }
-
         return -1;
     }
 
-    private boolean isHotbarSlot(int slot) {
+    private boolean matches(ItemStack stack, ItemStack target) {
+        return !stack.isEmpty() && stack.getItem() == target.getItem();
+    }
+
+    private void doSwap(LocalPlayer player, int source, int target) {
+        if (isHotbar(source) && isHotbar(target)) {
+            swapHotbarByPickup(player, source, target);
+        } else if (!isHotbar(source) && source != OFFHAND_SLOT && isHotbar(target)) {
+            swapInventoryToHotbar(player, source, target);
+        } else if (target == OFFHAND_SLOT) {
+            swapToOffhand(player, source);
+        } else if (source == OFFHAND_SLOT) {
+            swapFromOffhand(player, target);
+        } else {
+            // 兜底
+            handleInput(player, source, target, ContainerInput.SWAP);
+        }
+    }
+
+    private boolean isHotbar(int slot) {
         return slot >= 0 && slot <= 8;
     }
 
-    private void swapBetweenHotbar(LocalPlayer player, int slot1, int slot2) {
-        ItemStack originalStack2 = player.getInventory().getItem(slot2).copy();
+    // ========== 26.1 使用 ContainerInput + handleContainerInput ==========
 
-        if (mc.gameMode != null) {
-            mc.gameMode.handleContainerInput(
-                    player.containerMenu.containerId,
-                    slot1,
-                    0,
-                    ContainerInput.PICKUP,
-                    player
-            );
-        }
+    /** 快捷栏之间：模拟鼠标拾取交换 */
+    private void swapHotbarByPickup(LocalPlayer player, int slot1, int slot2) {
+        ItemStack stack2 = player.getInventory().getItem(slot2).copy();
 
-        if (mc.gameMode != null) {
-            mc.gameMode.handleContainerInput(
-                    player.containerMenu.containerId,
-                    slot2,
-                    0,
-                    ContainerInput.PICKUP,
-                    player
-            );
-        }
-
-        if (!originalStack2.isEmpty()) {
-            if (mc.gameMode != null) {
-                mc.gameMode.handleContainerInput(
-                        player.containerMenu.containerId,
-                        slot1,
-                        0,
-                        ContainerInput.PICKUP,
-                        player
-                );
-            }
+        handleInput(player, slot1, 0, ContainerInput.PICKUP);
+        handleInput(player, slot2, 0, ContainerInput.PICKUP);
+        if (!stack2.isEmpty()) {
+            handleInput(player, slot1, 0, ContainerInput.PICKUP);
         }
     }
 
-    private void swapWithOffhand(LocalPlayer player, int sourceSlot, int targetSlot) {
-        if (targetSlot == OFFHAND_SLOT) {
-            if (mc.gameMode != null) {
-                mc.gameMode.handleContainerInput(
-                        player.containerMenu.containerId,
-                        sourceSlot,
-                        0,
-                        ContainerInput.SWAP,
-                        player
-                );
-            }
-        } else {
-            if (mc.gameMode != null) {
-                mc.gameMode.handleContainerInput(
-                        player.containerMenu.containerId,
-                        OFFHAND_SLOT,
-                        targetSlot,
-                        ContainerInput.SWAP,
-                        player
-                );
-            }
+    /** 背包 → 快捷栏：SWAP */
+    private void swapInventoryToHotbar(LocalPlayer player, int source, int target) {
+        handleInput(player, source, target, ContainerInput.SWAP);
+    }
+
+    /** → 副手 */
+    private void swapToOffhand(LocalPlayer player, int source) {
+        handleInput(player, source, 0, ContainerInput.SWAP);
+    }
+
+    /** 副手 → */
+    private void swapFromOffhand(LocalPlayer player, int target) {
+        handleInput(player, OFFHAND_SLOT, target, ContainerInput.SWAP);
+    }
+
+    /** 统一操作 */
+    private void handleInput(LocalPlayer player, int slot, int button, ContainerInput input) {
+        if (mc.gameMode != null) {
+            mc.gameMode.handleContainerInput(
+                    player.containerMenu.containerId, slot, button, input, player);
         }
     }
 }

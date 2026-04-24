@@ -4,7 +4,6 @@ import com.example.autoclicker.Main;
 import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.feature.AutoClicker;
 import com.example.autoclicker.feature.MuteFeature;
-import com.example.autoclicker.gui.ConfigScreen;
 import com.example.autoclicker.toor.ConfigScreenImpl;
 import com.example.autoclicker.toor.KeyBindLoader;
 import com.example.autoclicker.toor.KeyBindLoaderImpl;

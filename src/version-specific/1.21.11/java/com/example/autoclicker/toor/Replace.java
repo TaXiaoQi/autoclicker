@@ -19,10 +19,7 @@ public class Replace {
 
     /**
      * 补充物品到指定槽位
-     * @param player 玩家实例
-     * @param targetItem 需要补充的目标物品
-     * @param targetSlot 目标槽位
-     * @return 是否成功补充
+     * 自动从背包或快捷栏查找，根据源位置选择不同的交换方式
      */
     public boolean refillSlot(LocalPlayer player, ItemStack targetItem, int targetSlot) {
         if (mc.gameMode == null) return false;
@@ -37,23 +34,7 @@ public class Replace {
         }
 
         try {
-            // 判断源槽位和目标槽位的类型
-            if (isHotbarSlot(sourceSlot) && isHotbarSlot(targetSlot)) {
-                // 两个都是快捷栏：使用普通的点击交换
-                swapBetweenHotbar(player, sourceSlot, targetSlot);
-            } else if (sourceSlot == OFFHAND_SLOT || targetSlot == OFFHAND_SLOT) {
-                // 涉及副手的交换
-                swapWithOffhand(player, sourceSlot, targetSlot);
-            } else {
-                // 一个背包一个快捷栏：使用 SWAP
-                mc.gameMode.handleInventoryMouseClick(
-                        player.containerMenu.containerId,
-                        sourceSlot,
-                        targetSlot,  // 快捷栏索引作为 button 参数
-                        ClickType.SWAP,
-                        player
-                );
-            }
+            doSwap(player, sourceSlot, targetSlot);
             return true;
         } catch (Exception e) {
             Main.sendMessage("autoclicker.message.refill_failed");
@@ -62,124 +43,107 @@ public class Replace {
     }
 
     /**
-     * 在背包中查找指定物品
-     * @param inv 玩家背包
-     * @param target 目标物品
-     * @param excludeSlot 排除的槽位（目标槽位本身）
-     * @return 源槽位索引，-1 表示未找到
+     * 通用查找方法：从除 targetSlot 外的所有槽位（0-40）查找目标物品
+     * 查找顺序：背包(9-35) → 快捷栏(0-8) → 副手(40)
      */
-    private int findSourceSlot(Inventory inv, ItemStack target, int excludeSlot) {
-        // 1. 优先从背包找（9-35）
+    private int findSourceSlot(Inventory inv, ItemStack target, int targetSlot) {
+        // 1. 背包（9-35）
         for (int i = 9; i < 36; i++) {
-            ItemStack stack = inv.getItem(i);
-            if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
+            if (i == targetSlot) continue;
+            if (matches(inv.getItem(i), target)) {
                 return i;
             }
         }
 
-        // 2. 如果目标是主手（快捷栏），可以从其他快捷栏找
-        if (excludeSlot >= 0 && excludeSlot <= 8) {
-            for (int i = 0; i <= 8; i++) {
-                if (i == excludeSlot) continue;
-                ItemStack stack = inv.getItem(i);
-                if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                    return i;
-                }
+        // 2. 快捷栏（0-8）
+        for (int i = 0; i <= 8; i++) {
+            if (i == targetSlot) continue;
+            if (matches(inv.getItem(i), target)) {
+                return i;
             }
         }
 
-        // 3. 如果目标是副手，可以从快捷栏找（包括主手）
-        if (excludeSlot == OFFHAND_SLOT) {
-            for (int i = 0; i <= 8; i++) {
-                ItemStack stack = inv.getItem(i);
-                if (!stack.isEmpty() && stack.getItem() == target.getItem()) {
-                    return i;
-                }
-            }
+        // 3. 副手（40）
+        if (targetSlot != OFFHAND_SLOT && matches(inv.getItem(OFFHAND_SLOT), target)) {
+            return OFFHAND_SLOT;
         }
 
         return -1;
     }
 
+    private boolean matches(ItemStack stack, ItemStack target) {
+        return !stack.isEmpty() && stack.getItem() == target.getItem();
+    }
+
     /**
-     * 判断是否为快捷栏槽位
+     * 根据源位置和目标位置选择交换方式
      */
-    private boolean isHotbarSlot(int slot) {
+    private void doSwap(LocalPlayer player, int source, int target) {
+        // 情况1：两个都是快捷栏 → 模拟鼠标拾取交换
+        if (isHotbar(source) && isHotbar(target)) {
+            swapHotbarByPickup(player, source, target);
+        }
+        // 情况2：源在背包，目标在快捷栏 → SWAP 按键交换
+        else if (!isHotbar(source) && source != OFFHAND_SLOT && isHotbar(target)) {
+            swapInventoryToHotbar(player, source, target);
+        }
+        // 情况3：目标为副手 → SWAP 交换
+        else if (target == OFFHAND_SLOT) {
+            swapToOffhand(player, source);
+        }
+        // 情况4：源为副手 → SWAP 交换
+        else if (source == OFFHAND_SLOT) {
+            swapFromOffhand(player, target);
+        }
+        // 情况5：其他（如两个都在背包，一般不会出现）
+        else {
+            if (mc.gameMode != null) {
+                mc.gameMode.handleInventoryMouseClick(
+                        player.containerMenu.containerId, source, target, ClickType.SWAP, player);
+            }
+        }
+    }
+
+    private boolean isHotbar(int slot) {
         return slot >= 0 && slot <= 8;
     }
 
-    /**
-     * 快捷栏之间的物品交换
-     */
-    private void swapBetweenHotbar(LocalPlayer player, int slot1, int slot2) {
-        // 删除未使用的 stack1
-        // 保存 slot2 的原始物品（交换前）
-        ItemStack originalStack2 = player.getInventory().getItem(slot2).copy();
+    // ========== 交换方式实现 ==========
 
-        // 1. 点击 slot1 拿起物品
-        if (mc.gameMode != null) {
-            mc.gameMode.handleInventoryMouseClick(
-                    player.containerMenu.containerId,
-                    slot1,
-                    0,
-                    ClickType.PICKUP,
-                    player
-            );
-        }
+    /** 快捷栏之间：模拟鼠标拾取交换 */
+    private void swapHotbarByPickup(LocalPlayer player, int slot1, int slot2) {
+        ItemStack stack2 = player.getInventory().getItem(slot2).copy();
 
-        // 2. 点击 slot2 放下物品
-        if (mc.gameMode != null) {
-            mc.gameMode.handleInventoryMouseClick(
-                    player.containerMenu.containerId,
-                    slot2,
-                    0,
-                    ClickType.PICKUP,
-                    player
-            );
-        }
-
-        // 3. 如果 slot2 原来有物品，放回 slot1
-        if (!originalStack2.isEmpty()) {  // 改用 originalStack2
-            if (mc.gameMode != null) {
-                mc.gameMode.handleInventoryMouseClick(
-                        player.containerMenu.containerId,
-                        slot1,
-                        0,
-                        ClickType.PICKUP,
-                        player
-                );
-            }
+        // 拿起 slot1
+        click(player, slot1, 0, ClickType.PICKUP);
+        // 放到 slot2
+        click(player, slot2, 0, ClickType.PICKUP);
+        // 如果 slot2 原来有物品，放回 slot1
+        if (!stack2.isEmpty()) {
+            click(player, slot1, 0, ClickType.PICKUP);
         }
     }
 
-    /**
-     * 涉及副手的物品交换
-     */
-    private void swapWithOffhand(LocalPlayer player, int sourceSlot, int targetSlot) {
-        // 副手交换使用 F 键的功能
-        // 注意：这里的实现可能需要根据版本调整
-        if (targetSlot == OFFHAND_SLOT) {
-            // 从 sourceSlot 移动到副手
-            if (mc.gameMode != null) {
-                mc.gameMode.handleInventoryMouseClick(
-                        player.containerMenu.containerId,
-                        sourceSlot,
-                        0,  // button
-                        ClickType.SWAP,
-                        player
-                );
-            }
-        } else {
-            // 从副手移动到 targetSlot
-            if (mc.gameMode != null) {
-                mc.gameMode.handleInventoryMouseClick(
-                        player.containerMenu.containerId,
-                        OFFHAND_SLOT,
-                        targetSlot,
-                        ClickType.SWAP,
-                        player
-                );
-            }
+    /** 背包 → 快捷栏：数字键 SWAP */
+    private void swapInventoryToHotbar(LocalPlayer player, int source, int target) {
+        click(player, source, target, ClickType.SWAP);
+    }
+
+    /** → 副手：F 键 SWAP */
+    private void swapToOffhand(LocalPlayer player, int source) {
+        click(player, source, 0, ClickType.SWAP);
+    }
+
+    /** 副手 → 快捷栏：F 键 SWAP */
+    private void swapFromOffhand(LocalPlayer player, int target) {
+        click(player, OFFHAND_SLOT, target, ClickType.SWAP);
+    }
+
+    /** 统一点击方法 */
+    private void click(LocalPlayer player, int slot, int button, ClickType type) {
+        if (mc.gameMode != null) {
+            mc.gameMode.handleInventoryMouseClick(
+                    player.containerMenu.containerId, slot, button, type, player);
         }
     }
 }
