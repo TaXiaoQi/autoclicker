@@ -40,7 +40,6 @@ public class EventHandler {
     private static void loadKeyBindingsFromConfig() {
         var config = ConfigManager.getConfig();
 
-        // 使用加载器创建按键，不再需要手动传入分类
         muteKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.mute",
                 InputConstants.Type.KEYSYM,

@@ -1,6 +1,7 @@
 package com.example.autoclicker.toor;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 
@@ -11,12 +12,12 @@ public class KeyBindLoaderImpl implements KeyBindLoader {
 
     @Override
     public KeyMapping createKeyBind(String description, InputConstants.Type type, int keyCode) {
-        // 26.1 中 KeyMapping 构造时会自注册
-        return new KeyMapping(description, type, keyCode, CATEGORY);
+        KeyMapping keyMapping = new KeyMapping(description, type, keyCode, CATEGORY);
+        return KeyMappingHelper.registerKeyMapping(keyMapping);
     }
 
     @Override
     public void registerKeyBind(KeyMapping keyMapping) {
-        // 已在构造函数中自动注册
+        // KeyMappingHelper.registerKeyMapping 已经注册了
     }
 }
