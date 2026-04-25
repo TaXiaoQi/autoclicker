@@ -29,27 +29,24 @@ public class Replace {
             return false;
         }
 
+        Main.LOGGER.info("[AutoRefill] 从槽位{}补充到槽位{}", sourceSlot, targetSlot);
+
         try {
             doSwap(player, sourceSlot, targetSlot);
             return true;
         } catch (Exception e) {
-            Main.sendMessage("autoclicker.message.refill_failed");
+            Main.LOGGER.error("[AutoRefill] 补充失败", e);
             return false;
         }
     }
 
     private int findSourceSlot(Inventory inv, ItemStack target, int targetSlot) {
-        // 1. 背包（9-35）
         for (int i = 9; i < 36; i++) {
-            if (i == targetSlot) continue;
-            if (matches(inv.getItem(i), target)) return i;
+            if (i != targetSlot && matches(inv.getItem(i), target)) return i;
         }
-        // 2. 快捷栏（0-8）
         for (int i = 0; i <= 8; i++) {
-            if (i == targetSlot) continue;
-            if (matches(inv.getItem(i), target)) return i;
+            if (i != targetSlot && matches(inv.getItem(i), target)) return i;
         }
-        // 3. 副手（40）
         if (targetSlot != OFFHAND_SLOT && matches(inv.getItem(OFFHAND_SLOT), target)) {
             return OFFHAND_SLOT;
         }
@@ -62,15 +59,16 @@ public class Replace {
 
     private void doSwap(LocalPlayer player, int source, int target) {
         if (isHotbar(source) && isHotbar(target)) {
+            Main.LOGGER.info("[AutoRefill] 走快捷栏PICKUP分支");
             swapHotbarByPickup(player, source, target);
-        } else if (!isHotbar(source) && source != OFFHAND_SLOT && isHotbar(target)) {
-            swapInventoryToHotbar(player, source, target);
         } else if (target == OFFHAND_SLOT) {
-            swapToOffhand(player, source);
+            Main.LOGGER.info("[AutoRefill] 走副手分支");
+            handleInput(player, source, OFFHAND_SLOT, ContainerInput.SWAP);
         } else if (source == OFFHAND_SLOT) {
-            swapFromOffhand(player, target);
+            Main.LOGGER.info("[AutoRefill] 走从副手移走分支");
+            handleInput(player, OFFHAND_SLOT, target, ContainerInput.SWAP);
         } else {
-            // 兜底
+            Main.LOGGER.info("[AutoRefill] 走普通SWAP分支");
             handleInput(player, source, target, ContainerInput.SWAP);
         }
     }
@@ -79,32 +77,14 @@ public class Replace {
         return slot >= 0 && slot <= 8;
     }
 
-    // ========== 26.1 使用 ContainerInput + handleContainerInput ==========
-
     /** 快捷栏之间：模拟鼠标拾取交换 */
     private void swapHotbarByPickup(LocalPlayer player, int slot1, int slot2) {
         ItemStack stack2 = player.getInventory().getItem(slot2).copy();
-
         handleInput(player, slot1, 0, ContainerInput.PICKUP);
         handleInput(player, slot2, 0, ContainerInput.PICKUP);
         if (!stack2.isEmpty()) {
             handleInput(player, slot1, 0, ContainerInput.PICKUP);
         }
-    }
-
-    /** 背包 → 快捷栏：SWAP */
-    private void swapInventoryToHotbar(LocalPlayer player, int source, int target) {
-        handleInput(player, source, target, ContainerInput.SWAP);
-    }
-
-    /** → 副手 */
-    private void swapToOffhand(LocalPlayer player, int source) {
-        handleInput(player, source, 0, ContainerInput.SWAP);
-    }
-
-    /** 副手 → */
-    private void swapFromOffhand(LocalPlayer player, int target) {
-        handleInput(player, OFFHAND_SLOT, target, ContainerInput.SWAP);
     }
 
     /** 统一操作 */

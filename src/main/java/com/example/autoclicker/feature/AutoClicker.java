@@ -25,6 +25,7 @@ public class AutoClicker {
     private int attackRefillDelay = 0;
     private int placeRefillDelay = 0;
 
+    // 补货触发延迟
     private static final int REFILL_DELAY_TICKS = 2;
 
     private final AutoRefill autoRefill = new AutoRefill();
@@ -95,6 +96,8 @@ public class AutoClicker {
                     if (attackRefillDelay == 0) {
                         attackRefillDelay = REFILL_DELAY_TICKS;
                     }
+                } else {
+                    attackTickCounter = 0;
                 }
             }
         }
@@ -112,6 +115,8 @@ public class AutoClicker {
                     if (placeRefillDelay == 0) {
                         placeRefillDelay = REFILL_DELAY_TICKS;
                     }
+                } else {
+                    placeTickCounter = 0;
                 }
             }
         }
