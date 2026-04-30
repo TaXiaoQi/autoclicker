@@ -26,7 +26,7 @@ public class AutoClicker {
     private int placeRefillDelay = 0;
 
     // 补货触发延迟
-    private static final int REFILL_DELAY_TICKS = 2;
+    private static final int REFILL_DELAY_TICKS = 0;
 
     private final AutoRefill autoRefill = new AutoRefill();
 

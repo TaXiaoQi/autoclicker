@@ -29,24 +29,60 @@ public class Replace {
             return false;
         }
 
-        Main.LOGGER.info("[AutoRefill] 从槽位{}补充到槽位{}", sourceSlot, targetSlot);
+        Main.LOGGER.info("[AutoRefill] Refilling: slot {} -> slot {}", sourceSlot, targetSlot);
 
         try {
-            doSwap(player, sourceSlot, targetSlot);
+            if (sourceSlot >= 9 && sourceSlot <= 35) {
+                // 源在背包：SWAP 可靠
+                mc.gameMode.handleContainerInput(
+                        player.containerMenu.containerId,
+                        sourceSlot,
+                        targetSlot,
+                        ContainerInput.SWAP,
+                        player
+                );
+            } else {
+                // 源在快捷栏(0-8)或副手(40)：PICKUP
+                // 第一次：拿起源槽位
+                mc.gameMode.handleContainerInput(
+                        player.containerMenu.containerId,
+                        sourceSlot,
+                        0,
+                        ContainerInput.PICKUP,
+                        player
+                );
+                // 第二次：放到目标槽位
+                mc.gameMode.handleContainerInput(
+                        player.containerMenu.containerId,
+                        targetSlot,
+                        0,
+                        ContainerInput.PICKUP,
+                        player
+                );
+            }
+
             return true;
         } catch (Exception e) {
-            Main.LOGGER.error("[AutoRefill] 补充失败", e);
+            Main.LOGGER.error("补货失败", e);
+            Main.sendMessage("autoclicker.message.refill_failed");
             return false;
         }
     }
 
     private int findSourceSlot(Inventory inv, ItemStack target, int targetSlot) {
+        // 优先从背包（9-35）查找
         for (int i = 9; i < 36; i++) {
-            if (i != targetSlot && matches(inv.getItem(i), target)) return i;
+            if (i != targetSlot && matches(inv.getItem(i), target)) {
+                return i;
+            }
         }
+        // 再从快捷栏（0-8）查找
         for (int i = 0; i <= 8; i++) {
-            if (i != targetSlot && matches(inv.getItem(i), target)) return i;
+            if (i != targetSlot && matches(inv.getItem(i), target)) {
+                return i;
+            }
         }
+        // 最后检查副手
         if (targetSlot != OFFHAND_SLOT && matches(inv.getItem(OFFHAND_SLOT), target)) {
             return OFFHAND_SLOT;
         }
@@ -55,43 +91,5 @@ public class Replace {
 
     private boolean matches(ItemStack stack, ItemStack target) {
         return !stack.isEmpty() && stack.getItem() == target.getItem();
-    }
-
-    private void doSwap(LocalPlayer player, int source, int target) {
-        if (isHotbar(source) && isHotbar(target)) {
-            Main.LOGGER.info("[AutoRefill] 走快捷栏PICKUP分支");
-            swapHotbarByPickup(player, source, target);
-        } else if (target == OFFHAND_SLOT) {
-            Main.LOGGER.info("[AutoRefill] 走副手分支");
-            handleInput(player, source, OFFHAND_SLOT, ContainerInput.SWAP);
-        } else if (source == OFFHAND_SLOT) {
-            Main.LOGGER.info("[AutoRefill] 走从副手移走分支");
-            handleInput(player, OFFHAND_SLOT, target, ContainerInput.SWAP);
-        } else {
-            Main.LOGGER.info("[AutoRefill] 走普通SWAP分支");
-            handleInput(player, source, target, ContainerInput.SWAP);
-        }
-    }
-
-    private boolean isHotbar(int slot) {
-        return slot >= 0 && slot <= 8;
-    }
-
-    /** 快捷栏之间：模拟鼠标拾取交换 */
-    private void swapHotbarByPickup(LocalPlayer player, int slot1, int slot2) {
-        ItemStack stack2 = player.getInventory().getItem(slot2).copy();
-        handleInput(player, slot1, 0, ContainerInput.PICKUP);
-        handleInput(player, slot2, 0, ContainerInput.PICKUP);
-        if (!stack2.isEmpty()) {
-            handleInput(player, slot1, 0, ContainerInput.PICKUP);
-        }
-    }
-
-    /** 统一操作 */
-    private void handleInput(LocalPlayer player, int slot, int button, ContainerInput input) {
-        if (mc.gameMode != null) {
-            mc.gameMode.handleContainerInput(
-                    player.containerMenu.containerId, slot, button, input, player);
-        }
     }
 }

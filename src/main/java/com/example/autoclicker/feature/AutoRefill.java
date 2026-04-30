@@ -236,7 +236,8 @@ public class AutoRefill {
     }
 
     private boolean refillSlot(LocalPlayer player, Memory memory, int targetSlot) {
-        return replacer.refillSlot(player, memory.item, targetSlot);
+        // 传递副本，防止原对象被修改
+        return replacer.refillSlot(player, memory.item.copy(), targetSlot);
     }
 
     /**
