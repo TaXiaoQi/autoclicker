@@ -3,7 +3,11 @@ package com.example.autoclicker.toor;
 import com.example.autoclicker.Main;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
@@ -33,7 +37,7 @@ public class Replace {
 
         try {
             if (sourceSlot >= 9 && sourceSlot <= 35) {
-                // 源在背包：SWAP 可靠
+                // 源在背包：使用 SWAP 客户端操作
                 mc.gameMode.handleContainerInput(
                         player.containerMenu.containerId,
                         sourceSlot,
@@ -42,26 +46,27 @@ public class Replace {
                         player
                 );
             } else {
-                // 源在快捷栏(0-8)或副手(40)：PICKUP
-                // 第一次：拿起源槽位
-                mc.gameMode.handleContainerInput(
-                        player.containerMenu.containerId,
-                        sourceSlot,
-                        0,
-                        ContainerInput.PICKUP,
-                        player
-                );
-                // 第二次：放到目标槽位
-                mc.gameMode.handleContainerInput(
-                        player.containerMenu.containerId,
-                        targetSlot,
-                        0,
-                        ContainerInput.PICKUP,
-                        player
-                );
+                // 源在快捷栏(0-8)或副手(40)，网络发包模拟F切换
+                if (targetSlot == OFFHAND_SLOT) {
+                    // 目前快捷栏：切换至副手
+                    if (mc.player != null) {
+                        mc.player.connection.send(new ServerboundPlayerActionPacket(
+                                ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND,
+                                BlockPos.ZERO,
+                                Direction.DOWN
+                        ));
+                    }
+                } else {
+                    // 目标快捷栏：切换选中框并同步
+                    player.getInventory().setSelectedSlot(sourceSlot);
+                    if (mc.player != null) {
+                        mc.player.connection.send(new ServerboundSetCarriedItemPacket(sourceSlot));
+                    }
+                }
             }
 
             return true;
+
         } catch (Exception e) {
             Main.LOGGER.error("补货失败", e);
             Main.sendMessage("autoclicker.message.refill_failed");

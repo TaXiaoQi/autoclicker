@@ -1,12 +1,12 @@
 pluginManagement {
     repositories {
-        maven { url "https://maven.fabricmc.net/" }
-        gradlePluginPortal()
+        maven { url = "https://maven.fabricmc.net/" }
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
-rootProject.name = "autoclicker-multi"
+rootProject.name = "Autoclicker"
 
 def versionsDir = file("versions")
 if (versionsDir.exists() && versionsDir.isDirectory()) {
