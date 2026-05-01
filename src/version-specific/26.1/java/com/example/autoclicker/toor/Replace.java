@@ -46,9 +46,31 @@ public class Replace {
                         player
                 );
             } else {
-                // 源在快捷栏(0-8)或副手(40)，网络发包模拟F切换
+                // 源在快捷栏(0-8)或副手(40)
+                int originalSlot = player.getInventory().getSelectedSlot(); // 保存当前选中槽位
+
                 if (targetSlot == OFFHAND_SLOT) {
-                    // 目前快捷栏：切换至副手
+                    // === 目标副手：切到源 → F → 切回来 ===
+                    // 第1步：切换选中框到源槽位
+                    player.getInventory().setSelectedSlot(sourceSlot);
+                    if (mc.player != null) {
+                        mc.player.connection.send(new ServerboundSetCarriedItemPacket(sourceSlot));
+                    }
+                    // 第2步：F键交换（当前选中框 ↔ 副手）
+                    if (mc.player != null) {
+                        mc.player.connection.send(new ServerboundPlayerActionPacket(
+                                ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND,
+                                BlockPos.ZERO,
+                                Direction.DOWN
+                        ));
+                    }
+                    // 第3步：切回原来的选中框
+                    player.getInventory().setSelectedSlot(originalSlot);
+                    if (mc.player != null) {
+                        mc.player.connection.send(new ServerboundSetCarriedItemPacket(originalSlot));
+                    }
+                } else if (sourceSlot == OFFHAND_SLOT) {
+                    // === 源在副手，目标是快捷栏：F即可（F交换主副手） ===
                     if (mc.player != null) {
                         mc.player.connection.send(new ServerboundPlayerActionPacket(
                                 ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND,
@@ -57,7 +79,7 @@ public class Replace {
                         ));
                     }
                 } else {
-                    // 目标快捷栏：切换选中框并同步
+                    // === 目标快捷栏：直接切到源槽位即可 ===
                     player.getInventory().setSelectedSlot(sourceSlot);
                     if (mc.player != null) {
                         mc.player.connection.send(new ServerboundSetCarriedItemPacket(sourceSlot));
