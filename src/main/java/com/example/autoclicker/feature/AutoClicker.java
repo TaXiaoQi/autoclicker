@@ -21,6 +21,9 @@ public class AutoClicker {
     private int attackCooldown = 0;
     private int placeCooldown = 0;
 
+    private boolean wasAttackEnabled = false;
+    private boolean wasPlaceEnabled = false;
+
     // 添加延迟补货计数器
     private int attackRefillDelay = 0;
     private int placeRefillDelay = 0;
@@ -32,7 +35,6 @@ public class AutoClicker {
 
     private long lastSuccessfulAttackTime = -1;
     private long lastSuccessfulPlaceTime = -1;
-
 
     // 记录功能启动时间
     private long attackStartTime = -1;
@@ -83,6 +85,32 @@ public class AutoClicker {
         boolean attackNowEnabled = isAutoAttackEnabled();
         boolean placeNowEnabled = isAutoPlaceEnabled();
 
+        // ===== 检测攻击开关变化 =====
+        if (attackNowEnabled && !wasAttackEnabled) {
+            // 刚开启：记录启动时间
+            attackStartTime = levelTime;
+            Main.LOGGER.debug("攻击启动时间记录：{}", attackStartTime);
+        } else if (!attackNowEnabled && wasAttackEnabled) {
+            // 刚关闭（手动）：重置计时器
+            attackStartTime = -1;
+            lastSuccessfulAttackTime = -1;
+            Main.LOGGER.debug("攻击已手动关闭，重置超时计时器");
+        }
+
+        // ===== 检测放置开关变化 =====
+        if (placeNowEnabled && !wasPlaceEnabled) {
+            placeStartTime = levelTime;
+            Main.LOGGER.debug("放置启动时间记录：{}", placeStartTime);
+        } else if (!placeNowEnabled && wasPlaceEnabled) {
+            placeStartTime = -1;
+            lastSuccessfulPlaceTime = -1;
+            Main.LOGGER.debug("放置已手动关闭，重置超时计时器");
+        }
+
+        // 更新状态追踪
+        wasAttackEnabled = attackNowEnabled;
+        wasPlaceEnabled = placeNowEnabled;
+
         // ===== 自动攻击逻辑 =====
         if (attackNowEnabled) {
             attackTickCounter++;
@@ -132,7 +160,6 @@ public class AutoClicker {
 
         // 检查自动攻击超时（如果开启了自动关闭功能）
         if (config.autoAttackEnabled && config.autoDisableAttack) {
-            // 修改：使用启动时间作为基准，如果成功攻击过则使用成功时间
             long referenceTime = (lastSuccessfulAttackTime != -1) ? lastSuccessfulAttackTime : attackStartTime;
 
             if (referenceTime != -1 && currentTime - referenceTime >= timeoutTicks) {
@@ -144,13 +171,13 @@ public class AutoClicker {
                 // 重置状态
                 attackStartTime = -1;
                 lastSuccessfulAttackTime = -1;
+                wasAttackEnabled = false;
                 Main.LOGGER.info("自动攻击已超时关闭（{}秒无操作）", config.autoDisableTimeout);
             }
         }
 
         // 检查自动放置超时（如果开启了自动关闭功能）
         if (config.autoPlaceEnabled && config.autoDisablePlace) {
-            // 修改：使用启动时间作为基准，如果成功放置过则使用成功时间
             long referenceTime = (lastSuccessfulPlaceTime != -1) ? lastSuccessfulPlaceTime : placeStartTime;
 
             if (referenceTime != -1 && currentTime - referenceTime >= timeoutTicks) {
@@ -162,6 +189,7 @@ public class AutoClicker {
                 // 重置状态
                 placeStartTime = -1;
                 lastSuccessfulPlaceTime = -1;
+                wasPlaceEnabled = false;
                 Main.LOGGER.info("自动放置已超时关闭（{}秒无操作）", config.autoDisableTimeout);
             }
         }
@@ -182,9 +210,13 @@ public class AutoClicker {
         attackRefillDelay = 0;
         placeRefillDelay = 0;
 
-        // 新增：重置启动时间
+        // 重置启动时间
         attackStartTime = -1;
         placeStartTime = -1;
+
+        // 重置开关追踪
+        wasAttackEnabled = false;
+        wasPlaceEnabled = false;
 
         // 重置初始化标记
         memoryInitialized = false;
