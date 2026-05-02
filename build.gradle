@@ -168,13 +168,19 @@ subprojects {
         toolchain {
             languageVersion = JavaLanguageVersion.of(javaVersion)
         }
-        sourceCompatibility = JavaVersion.toVersion(javaVersion)
-        targetCompatibility = JavaVersion.toVersion(javaVersion)
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.release = javaVersion
         options.encoding = 'UTF-8'
+
+        // 26.1 系列（JDK 25）使用 fork 模式，隔离编译进程
+        if (mcVersion.startsWith('26')) {
+            options.fork = true
+            def jdkPath = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(25)
+            }.get().executablePath.asFile.absolutePath.replace('\\', '/')
+            options.forkOptions.javaHome = file(jdkPath).parentFile.parentFile
+        }
     }
 
     // 使用版本组
