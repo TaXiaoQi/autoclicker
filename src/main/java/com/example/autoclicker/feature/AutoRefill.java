@@ -217,7 +217,7 @@ public class AutoRefill {
         }
 
         // 检查数量阈值
-        if (config.refillCountThreshold > 0) {
+        if (config.refillCountThreshold >= 0) {
             if (currentItem.getCount() <= config.refillCountThreshold) {
                 return true;
             }

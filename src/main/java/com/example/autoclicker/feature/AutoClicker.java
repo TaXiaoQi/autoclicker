@@ -24,13 +24,6 @@ public class AutoClicker {
     private boolean wasAttackEnabled = false;
     private boolean wasPlaceEnabled = false;
 
-    // 添加延迟补货计数器
-    private int attackRefillDelay = 0;
-    private int placeRefillDelay = 0;
-
-    // 补货触发延迟
-    private static final int REFILL_DELAY_TICKS = 2;
-
     private final AutoRefill autoRefill = new AutoRefill();
 
     private long lastSuccessfulAttackTime = -1;
@@ -50,33 +43,15 @@ public class AutoClicker {
 
             if (config.autoRefillMainHand || config.autoRefillOffHand) {
                 if (config.autoAttackEnabled) {
-                    autoRefill.onAttackUsed();  // 初始化攻击记忆
-                    Main.LOGGER.debug("攻击功能自动补货记忆已初始化");
+                    autoRefill.onAttackUsed();
                 }
                 if (config.autoPlaceEnabled) {
-                    autoRefill.onPlaceUsed();   // 初始化放置记忆
-                    Main.LOGGER.debug("放置功能自动补货记忆已初始化");
+                    autoRefill.onPlaceUsed();
                 }
             }
-
             memoryInitialized = true;
-            Main.LOGGER.info("自动补货记忆初始化完成");
         }
 
-        // 处理延迟补货
-        if (attackRefillDelay > 0) {
-            attackRefillDelay--;
-            if (attackRefillDelay == 0) {
-                autoRefill.onAttackUsed();
-            }
-        }
-
-        if (placeRefillDelay > 0) {
-            placeRefillDelay--;
-            if (placeRefillDelay == 0) {
-                autoRefill.onPlaceUsed();
-            }
-        }
 
         var levelTime = client.level.getGameTime();
         if (attackCooldown > 0) attackCooldown--;
@@ -119,11 +94,8 @@ public class AutoClicker {
                     attackTickCounter = 0;
                     attackCooldown = getAttackCooldown();
                     lastSuccessfulAttackTime = levelTime;
-                    Main.LOGGER.debug("攻击成功，更新时间戳：{}", lastSuccessfulAttackTime);
-                    // 攻击成功，延迟2tick调用补货
-                    if (attackRefillDelay == 0) {
-                        attackRefillDelay = REFILL_DELAY_TICKS;
-                    }
+
+                    autoRefill.onAttackUsed();
                 } else {
                     attackTickCounter = 0;
                 }
@@ -138,11 +110,7 @@ public class AutoClicker {
                     placeTickCounter = 0;
                     placeCooldown = getPlaceCooldown();
                     lastSuccessfulPlaceTime = levelTime;
-                    Main.LOGGER.debug("放置成功，更新时间戳：{}", lastSuccessfulPlaceTime);
-                    // 放置成功，延迟2tick调用补货
-                    if (placeRefillDelay == 0) {
-                        placeRefillDelay = REFILL_DELAY_TICKS;
-                    }
+                    autoRefill.onPlaceUsed();
                 } else {
                     placeTickCounter = 0;
                 }
@@ -205,10 +173,6 @@ public class AutoClicker {
         placeCooldown = 0;
         lastSuccessfulAttackTime = -1;
         lastSuccessfulPlaceTime = -1;
-
-        // 重置延迟补货计数器
-        attackRefillDelay = 0;
-        placeRefillDelay = 0;
 
         // 重置启动时间
         attackStartTime = -1;
