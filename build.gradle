@@ -19,6 +19,17 @@ println "使用模组版本: ${modVersion}"
 
 // MC 版本对应的Fabric api
 def fabricApiVersions = [
+        "1.16.5": "0.42.0+1.16",
+        "1.17": "0.46.1+1.17",
+        "1.17.1": "0.46.1+1.17",
+        "1.18": "0.46.6+1.18",
+        "1.18.1": "0.46.6+1.18",
+        "1.18.2": "0.77.0+1.18.2",
+        "1.19": "0.58.0+1.19",
+        "1.19.1": "0.58.5+1.19.1",
+        "1.19.2": "0.77.0+1.19.2",
+        "1.19.3": "0.76.1+1.19.3",
+        "1.19.4": "0.87.2+1.19.4",
         "1.20": "0.83.0+1.20",
         "1.20.1": "0.92.7+1.20.1",
         "1.20.2": "0.91.6+1.20.2",
@@ -40,11 +51,24 @@ def fabricApiVersions = [
         "1.21.11": "0.140.2+1.21.11",
         "26.1": "0.145.1+26.1",
         "26.1.1": "0.145.4+26.1.1",
-        "26.1.2": "0.145.4+26.1.2"
+        "26.1.2": "0.145.4+26.1.2",
+        "26.2": "0.152.2+26.2",
+        "26.3": "0.164.0+26.3"
 ]
 
 // MC 版本对应的 Mod Menu 版本
 def modMenuVersions = [
+        "1.16.5": "1.16.9",
+        "1.17": "2.0.14",
+        "1.17.1": "2.0.14",
+        "1.18": "3.0.1",
+        "1.18.1": "3.0.1",
+        "1.18.2": "3.2.5",
+        "1.19": "4.0.6",
+        "1.19.1": "4.1.0",
+        "1.19.2": "4.1.2",
+        "1.19.3": "5.0.2",
+        "1.19.4": "6.3.1",
         "1.20": "7.2.2",
         "1.20.1": "7.2.2",
         "1.20.2": "7.2.2",
@@ -66,31 +90,60 @@ def modMenuVersions = [
         "1.21.11": "17.0.0",
         "26.1": "18.0.0-alpha.8",
         "26.1.1": "18.0.0-alpha.8",
-        "26.1.2": "18.0.0-alpha.8"
+        "26.1.2": "18.0.0-alpha.8",
+        "26.2": "18.0.0-alpha.8",
+        "26.3": "21.0.0"
 ]
 
-// 版本分组映射
-def getVersionGroup = { mcVersion ->
+// 版本分组映射（返回源码目录列表，按顺序叠加；同名类不允许跨目录重复）
+def getVersionGroups = { mcVersion ->
+    if (mcVersion == "1.16.5") {
+        // 1.16.5：Widget 基类 + addButton，独立完整 era 目录
+        return ["1.16.5"]
+    }
+    if (mcVersion ==~ /1\.17(?:\.[01])?/ || mcVersion ==~ /1\.18(?:\.[12])?/) {
+        // 1.17~1.18.2：AbstractWidget 体系 + 四参 useItemOn（含 level）
+        return ["1.17.1-1.18.2"]
+    }
+    if (mcVersion ==~ /1\.19(?:\.[12])?/) {
+        // 1.19~1.19.2：三参 useItemOn，但尚无 Component 静态工厂
+        return ["1.19-1.19.2"]
+    }
+    if (mcVersion == "1.19.3") {
+        // 1.19.3：无 StringWidget/renderWidget（1.19.4 引入），独立 era
+        return ["1.19.3"]
+    }
+    if (mcVersion == "1.19.4") {
+        // 1.19.4：StringWidget/Button.builder/renderWidget 已引入，尚无 GuiGraphics
+        return ["1.19.4"]
+    }
     if (mcVersion == "1.20" || mcVersion == "1.20.1") {
-        return "1.20-1.20.1"
+        return ["shared-1.20", "1.20-1.20.1"]
     }
     if (mcVersion ==~ /1\.20(?:\.[2-6])?/ || mcVersion ==~ /1\.21(?:\.[1-4])?/) {
-        return "1.20.2-1.21.4"
+        return ["shared-1.20", "1.20.2-1.21.4"]
     }
     if (mcVersion ==~ /1\.21\.[5-8]/) {
-        return "1.21.5-1.21.8"
+        return ["shared-1.20", "1.21.5-1.21.8"]
     }
     if (mcVersion ==~ /1\.21\.9/) {
-        return "1.21.9"
+        return ["shared-1.20", "1.21.9"]
     }
     if (mcVersion ==~ /1\.21\.10/) {
-        return "1.21.10"
+        return ["shared-1.20", "1.21.10"]
     }
     if (mcVersion ==~ /1\.21\.11/) {
-        return "1.21.11"
+        return ["shared-1.20", "1.21.11"]
     }
-    if (mcVersion ==~ /26\.1(?:\.[1-2])?/) {
-        return "26.1"
+    if (mcVersion ==~ /26\.1(?:\.[1-9])?/) {
+        return ["shared-1.20", "26.1"]
+    }
+    if (mcVersion ==~ /26\.2(?:\.[1-9])?/) {
+        // 26.2 起 screen/消息 API 变更，独立完整 era 目录
+        return ["shared-1.20", "26.2"]
+    }
+    if (mcVersion ==~ /26\.3(?:\.[1-9])?/) {
+        return ["shared-1.20", "26.3"]
     }
     throw new GradleException("Unknown version: ${mcVersion}")
 }
@@ -125,7 +178,7 @@ subprojects {
     def fullVersion = "${modVersion}+${mcVersion}"
 
     // 获取版本组
-    def versionGroup = getVersionGroup(mcVersion)
+    def versionGroups = getVersionGroups(mcVersion)
 
     repositories {
         maven { url = "https://maven.fabricmc.net/" }
@@ -151,12 +204,17 @@ subprojects {
 
         def modMenuVersion = modMenuVersions[mcVersion]
 
+        // 1.20 之前的老版本使用旧 loader，避免 0.18.x 的新字节码影响 --release 降级编译
+        def loaderVersion = (mcVersion.startsWith('1.16') || mcVersion.startsWith('1.17')
+                || mcVersion.startsWith('1.18') || mcVersion.startsWith('1.19'))
+                ? "0.16.14" : "0.18.4"
+
         if (isModern) {
-            implementation "net.fabricmc:fabric-loader:0.18.4"
+            implementation "net.fabricmc:fabric-loader:${loaderVersion}"
             implementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersions[mcVersion]}"
             implementation "com.terraformersmc:modmenu:${modMenuVersion}"
         } else {
-            modImplementation "net.fabricmc:fabric-loader:0.18.4"
+            modImplementation "net.fabricmc:fabric-loader:${loaderVersion}"
             modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersions[mcVersion]}"
             modImplementation "com.terraformersmc:modmenu:${modMenuVersion}"
         }
@@ -181,14 +239,21 @@ subprojects {
             }.get().executablePath.asFile.absolutePath.replace('\\', '/')
             options.forkOptions.javaHome = file(jdkPath).parentFile.parentFile
         }
+
+        // 旧版本用 toolchain 21 编译但按历史字节码级别降级（--release）
+        if (mcVersion == "1.16.5") {
+            options.release = 8
+        } else if (mcVersion == "1.17" || mcVersion == "1.17.1") {
+            options.release = 16
+        } else if (mcVersion.startsWith("1.18") || mcVersion.startsWith("1.19")) {
+            options.release = 17
+        }
     }
 
     // 使用版本组
     sourceSets.main {
-        java.srcDirs = [
-                file("$rootDir/src/version-specific/${versionGroup}/java"),
-                file("$rootDir/src/main/java")
-        ]
+        java.srcDirs = versionGroups.collect { file("$rootDir/src/version-specific/${it}/java") } +
+                [file("$rootDir/src/main/java")]
         resources.srcDirs = [
                 // 只包含主项目的资源目录
                 file("$rootDir/src/main/resources")
@@ -208,9 +273,6 @@ subprojects {
         inputs.property "version", fullVersion
         inputs.property "minecraft_version", mcVersion
         inputs.property "java_version", getJavaVersionForMc(mcVersion)
-
-        // 添加构建时间戳，确保每次构建都不同（可选）
-        inputs.property "build_timestamp", System.currentTimeMillis()
 
         filesMatching("fabric.mod.json") {
             expand([
@@ -277,113 +339,25 @@ tasks.register('buildAllVersions') {
     group = 'build'
     description = 'Build all supported Minecraft versions sequentially'
 
-    // 从 1.20 系列开始
-    dependsOn ':1.20:build'
+    // 从 1.16.5 开始，到 26.x 系列结束
+    def versionOrder = [
+            '1.16.5',
+            '1.17', '1.17.1', '1.18', '1.18.1', '1.18.2',
+            '1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4',
+            '1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.5', '1.20.6',
+            '1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4',
+            '1.21.5', '1.21.6', '1.21.7', '1.21.8',
+            '1.21.9', '1.21.10', '1.21.11',
+            '26.1', '26.1.1', '26.1.2', '26.2', '26.3'
+    ]
 
-    project(':1.20.1').tasks.named('build').configure {
-        mustRunAfter ':1.20:build'
-    }
-    dependsOn ':1.20.1:build'
+    versionOrder.each { v -> dependsOn ":${v}:build" }
 
-    project(':1.20.2').tasks.named('build').configure {
-        mustRunAfter ':1.20.1:build'
+    // 依次串联顺序：每个版本的 build 在前一个版本之后执行
+    for (int i = 1; i < versionOrder.size(); i++) {
+        def prev = versionOrder[i - 1]
+        project(":${versionOrder[i]}").tasks.named('build').configure {
+            mustRunAfter ":${prev}:build"
+        }
     }
-    dependsOn ':1.20.2:build'
-
-    project(':1.20.3').tasks.named('build').configure {
-        mustRunAfter ':1.20.2:build'
-    }
-    dependsOn ':1.20.3:build'
-
-    project(':1.20.4').tasks.named('build').configure {
-        mustRunAfter ':1.20.3:build'
-    }
-    dependsOn ':1.20.4:build'
-
-    project(':1.20.5').tasks.named('build').configure {
-        mustRunAfter ':1.20.4:build'
-    }
-    dependsOn ':1.20.5:build'
-
-    project(':1.20.6').tasks.named('build').configure {
-        mustRunAfter ':1.20.5:build'
-    }
-    dependsOn ':1.20.6:build'
-
-    // 然后 1.21 系列
-    project(':1.21').tasks.named('build').configure {
-        mustRunAfter ':1.20.6:build'
-    }
-    dependsOn ':1.21:build'
-
-    project(':1.21.1').tasks.named('build').configure {
-        mustRunAfter ':1.21:build'
-    }
-    dependsOn ':1.21.1:build'
-
-    project(':1.21.2').tasks.named('build').configure {
-        mustRunAfter ':1.21.1:build'
-    }
-    dependsOn ':1.21.2:build'
-
-    project(':1.21.3').tasks.named('build').configure {
-        mustRunAfter ':1.21.2:build'
-    }
-    dependsOn ':1.21.3:build'
-
-    project(':1.21.4').tasks.named('build').configure {
-        mustRunAfter ':1.21.3:build'
-    }
-    dependsOn ':1.21.4:build'
-
-    project(':1.21.5').tasks.named('build').configure {
-        mustRunAfter ':1.21.4:build'
-    }
-    dependsOn ':1.21.5:build'
-
-    project(':1.21.6').tasks.named('build').configure {
-        mustRunAfter ':1.21.5:build'
-    }
-    dependsOn ':1.21.6:build'
-
-    project(':1.21.7').tasks.named('build').configure {
-        mustRunAfter ':1.21.6:build'
-    }
-    dependsOn ':1.21.7:build'
-
-    project(':1.21.8').tasks.named('build').configure {
-        mustRunAfter ':1.21.7:build'
-    }
-    dependsOn ':1.21.8:build'
-
-    project(':1.21.9').tasks.named('build').configure {
-        mustRunAfter ':1.21.8:build'
-    }
-    dependsOn ':1.21.9:build'
-
-    project(':1.21.10').tasks.named('build').configure {
-        mustRunAfter ':1.21.9:build'
-    }
-    dependsOn ':1.21.10:build'
-
-    project(':1.21.11').tasks.named('build').configure {
-        mustRunAfter ':1.21.10:build'
-    }
-    dependsOn ':1.21.11:build'
-
-    // 最后是 26.1 系列
-    project(':26.1').tasks.named('build').configure {
-        mustRunAfter ':1.21.11:build'
-    }
-    dependsOn ':26.1:build'
-
-    project(':26.1.1').tasks.named('build').configure {
-        mustRunAfter ':26.1:build'
-    }
-    dependsOn ':26.1.1:build'
-
-    project(':26.1.2').tasks.named('build').configure {
-        mustRunAfter ':26.1.1:build'
-    }
-    dependsOn ':26.1.2:build'
 }

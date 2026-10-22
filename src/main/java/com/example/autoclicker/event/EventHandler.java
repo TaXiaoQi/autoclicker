@@ -4,16 +4,16 @@ import com.example.autoclicker.Main;
 import com.example.autoclicker.config.ConfigManager;
 import com.example.autoclicker.feature.AutoClicker;
 import com.example.autoclicker.feature.MuteFeature;
-import com.example.autoclicker.toor.ConfigScreenImpl;
-import com.example.autoclicker.toor.KeyBindLoader;
-import com.example.autoclicker.toor.KeyBindLoaderImpl;
+import com.example.autoclicker.tool.ConfigScreenImpl;
+import com.example.autoclicker.tool.KeyBindLoader;
+import com.example.autoclicker.tool.KeyBindLoaderImpl;
+import com.example.autoclicker.tool.ScreenHelper;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
 
 public class EventHandler {
@@ -31,6 +31,10 @@ public class EventHandler {
 
     private static boolean wasInGame = false;
 
+    // 游戏退出流程标志：退出阶段窗口会被 Dynamic FPS 等模组 unfocus，
+    // 此时触发的失焦静音来不及恢复，会造成音量残留偏差（切窗音量降低问题）
+    private static boolean isStopping = false;
+
     public static void register() {
         loadKeyBindingsFromConfig();
         registerKeyBindings();
@@ -38,29 +42,25 @@ public class EventHandler {
     }
 
     private static void loadKeyBindingsFromConfig() {
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
 
         muteKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.mute",
-                InputConstants.Type.KEYSYM,
                 config.keyMute
         );
 
         toggleAttackKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.toggle_attack",
-                InputConstants.Type.KEYSYM,
                 config.keyToggleAttack
         );
 
         togglePlaceKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.toggle_place",
-                InputConstants.Type.KEYSYM,
                 config.keyTogglePlace
         );
 
         openGUIKey = keyBindLoader.createKeyBind(
                 "key.autoclicker.open_gui",
-                InputConstants.Type.KEYSYM,
                 config.keyOpenGUI
         );
     }
@@ -78,13 +78,19 @@ public class EventHandler {
 
         // 窗口焦点检测（最小化/失去焦点时静音）
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+                if (isStopping) return; // 退出流程中不再触发失焦静音
                 boolean windowActive = client.isWindowActive();
                 audioMute.updateMinimizedMute(!windowActive);
 
         });
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> handleGameExit());
-        ClientPlayConnectionEvents.DISCONNECT.register(EventHandler::onDisconnect);
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> audioMute.recoverSavedVolume());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+            isStopping = true;
+            handleGameExit();
+        });
+        // lambda 形式避免引用 handler 参数类型（1.16.5 为 ClientPlayNetHandler，1.17+ 为 ClientPacketListener）
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> handleLeaveGame());
     }
 
     // 断开连接时调用
@@ -100,20 +106,14 @@ public class EventHandler {
         wasInGame = true;
     }
 
-    // 离开多人游戏时
-    private static void onDisconnect(ClientPacketListener handler, Minecraft client) {
-        handleLeaveGame();
-    }
-
     // 离开单人游戏时
     private static void handleLeaveGame() {
-        var config = ConfigManager.getConfig();
-        if (!config.autoAttackEnabled && !config.autoPlaceEnabled) {
-            // 自动化已经关闭，不需要重复处理
-            return;
-        }
-        autoClick.resetAutomationOnDisconnect();
+        // 无论自动化开关状态如何都尝试恢复静音（例如超时自动关闭后音量未恢复的残留情况）
         audioMute.forceRestore();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
+        if (config.autoAttackEnabled || config.autoPlaceEnabled) {
+            autoClick.resetAutomationOnDisconnect();
+        }
     }
 
     private static void handleKeyBindings() {
@@ -144,15 +144,15 @@ public class EventHandler {
 
     // 自动攻击
     private static void handleToggleAttackKey() {
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
         boolean newState = !config.autoAttackEnabled;
         config.autoAttackEnabled = newState;
 
         if (config.muteOnAutoAttack) {
             if (newState) {
-                audioMute.requestAutoMute();
+                audioMute.requestAttackMute();
             } else {
-                audioMute.releaseAutoMute();
+                audioMute.releaseAttackMute();
             }
         }
 
@@ -161,32 +161,33 @@ public class EventHandler {
 
         String status = newState ? "gui.autoclicker.enabled" : "gui.autoclicker.disabled";
 
+        // 与实际随机范围一致：[interval - randomness, interval + randomness - 1]
         String intervalDisplay;
-        if (newState && config.attackRandomnessEnabled) {
-            int min = config.attackInterval;
-            int max = config.attackInterval + config.attackRandomness;
+        if (newState && config.attackRandomnessEnabled && config.attackRandomness > 0) {
+            int min = Math.max(1, config.attackInterval - config.attackRandomness);
+            int max = config.attackInterval + config.attackRandomness - 1;
             intervalDisplay = min + "~" + max;
         } else {
             intervalDisplay = String.valueOf(config.attackInterval);
         }
 
         Main.sendMessage("autoclicker.message.attack_toggle",
-                Component.translatable(status),
+                com.example.autoclicker.tool.TextCompat.translatable(status),
                 intervalDisplay
         );
     }
 
     // 自动放置
     private static void handleTogglePlaceKey() {
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
         boolean newState = !config.autoPlaceEnabled;
         config.autoPlaceEnabled = newState;
 
         if (config.muteOnAutoPlace) {
             if (newState) {
-                audioMute.requestAutoMute();
+                audioMute.requestPlaceMute();
             } else {
-                audioMute.releaseAutoMute();
+                audioMute.releasePlaceMute();
             }
         }
 
@@ -198,27 +199,28 @@ public class EventHandler {
                 ? "autoclicker.bonemeal.included"
                 : "autoclicker.bonemeal.excluded";
 
+        // 与实际随机范围一致：[interval - randomness, interval + randomness - 1]
         String intervalDisplay;
-        if (newState && config.placeRandomnessEnabled) {
-            int min = config.placeInterval;
-            int max = config.placeInterval + config.placeRandomness;
+        if (newState && config.placeRandomnessEnabled && config.placeRandomness > 0) {
+            int min = Math.max(1, config.placeInterval - config.placeRandomness);
+            int max = config.placeInterval + config.placeRandomness - 1;
             intervalDisplay = min + "~" + max;
         } else {
             intervalDisplay = String.valueOf(config.placeInterval);
         }
 
         Main.sendMessage("autoclicker.message.place_toggle",
-                Component.translatable(status),
+                com.example.autoclicker.tool.TextCompat.translatable(status),
                 intervalDisplay,
-                Component.translatable(boneMealStatus)
+                com.example.autoclicker.tool.TextCompat.translatable(boneMealStatus)
         );
     }
 
 
     private static void handleOpenGUIKey() {
         Minecraft client = Minecraft.getInstance();
-        if (client.screen == null) {
-            client.setScreen(new ConfigScreenImpl(null));
+        if (ScreenHelper.current(client) == null) {
+            ScreenHelper.open(client, new ConfigScreenImpl(null));
         }
     }
 

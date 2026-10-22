@@ -1,13 +1,13 @@
 package com.example.autoclicker.config;
 
-import org.lwjgl.glfw.GLFW;
-
 public class Config {
     // === 快捷键配置 ===
-    public int keyMute = GLFW.GLFW_KEY_F7;
-    public int keyToggleAttack = GLFW.GLFW_KEY_F8;
-    public int keyTogglePlace = GLFW.GLFW_KEY_F9;
-    public int keyOpenGUI = GLFW.GLFW_KEY_F10;
+    // 注意：MC 26.3 起编译类路径不再包含 org.lwjgl.glfw，故使用 GLFW 键码字面量
+    // （GLFW_KEY_F7=118, F8=119, F9=120, F10=121）
+    public int keyMute = 118;        // F7
+    public int keyToggleAttack = 119; // F8
+    public int keyTogglePlace = 120;  // F9
+    public int keyOpenGUI = 121;      // F10
 
     // === 自动攻击配置 ===
     public boolean autoAttackEnabled = false;
@@ -41,7 +41,4 @@ public class Config {
     public boolean muteOnAutoAttack = true;
     public boolean muteOnAutoPlace = true;
     public boolean muteWhenMinimized = true;
-
-    // === 反检测设置 ===
-    public boolean humanizeClicks = true;
 }

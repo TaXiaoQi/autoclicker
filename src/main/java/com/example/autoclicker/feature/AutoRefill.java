@@ -1,10 +1,12 @@
 package com.example.autoclicker.feature;
 
+import com.example.autoclicker.Main;
 import com.example.autoclicker.config.ConfigManager;
-import com.example.autoclicker.toor.Replace;
-import com.example.autoclicker.toor.SelectedSlotHelper;
+import com.example.autoclicker.tool.Replace;
+import com.example.autoclicker.tool.SelectedSlotHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 public class AutoRefill {
@@ -14,6 +16,7 @@ public class AutoRefill {
         ItemStack item;     // 物品
         int slot;           // 槽位索引
         boolean enabled;    // 是否启用
+        boolean noStockNotified; // 无货提示已发送，避免重复弹提示
 
         Memory(ItemStack item, int slot) {
             this.item = item.copy();
@@ -49,7 +52,7 @@ public class AutoRefill {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
 
         // 处理主手
         if (config.autoRefillMainHand) {
@@ -73,7 +76,7 @@ public class AutoRefill {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
 
         // 处理主手
         if (config.autoRefillMainHand) {
@@ -96,7 +99,7 @@ public class AutoRefill {
     private void manageAttackMainHandMemory(LocalPlayer player) {
         int currentSlot = SelectedSlotHelper.getSelectedSlot();
         ItemStack currentItem = SelectedSlotHelper.getMainHandItem();
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
 
         if (attackMainHandMem == null) {
             // 没有记忆，写入新记忆
@@ -111,10 +114,14 @@ public class AutoRefill {
                     ItemStack newItem = SelectedSlotHelper.getMainHandItem();
                     attackMainHandMem.update(newItem);
                     attackMainHandMem.slot = currentSlot;
+                    attackMainHandMem.noStockNotified = false;
                 }
             } else if (!currentItem.isEmpty() && !attackMainHandMem.isSameType(currentItem)) {
                 // 物品已手动更换，更新记忆
                 attackMainHandMem = new Memory(currentItem, currentSlot);
+            } else {
+                // 物品状态恢复正常，重置无货提示标志
+                attackMainHandMem.noStockNotified = false;
             }
         }
     }
@@ -124,7 +131,7 @@ public class AutoRefill {
      */
     private void manageAttackOffHandMemory(LocalPlayer player) {
         ItemStack currentItem = SelectedSlotHelper.getOffHandItem();
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
 
         if (attackOffHandMem == null) {
             // 没有记忆，写入新记忆
@@ -138,10 +145,14 @@ public class AutoRefill {
                 if (success) {
                     ItemStack newItem = SelectedSlotHelper.getOffHandItem();
                     attackOffHandMem.update(newItem);
+                    attackOffHandMem.noStockNotified = false;
                 }
             } else if (!currentItem.isEmpty() && !attackOffHandMem.isSameType(currentItem)) {
                 // 物品已手动更换，更新记忆
                 attackOffHandMem = new Memory(currentItem, OFFHAND_SLOT);
+            } else {
+                // 物品状态恢复正常，重置无货提示标志
+                attackOffHandMem.noStockNotified = false;
             }
         }
     }
@@ -152,7 +163,7 @@ public class AutoRefill {
     private void managePlaceMainHandMemory(LocalPlayer player) {
         int currentSlot = SelectedSlotHelper.getSelectedSlot();
         ItemStack currentItem = SelectedSlotHelper.getMainHandItem();
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
 
         if (placeMainHandMem == null) {
             // 没有记忆，写入新记忆
@@ -167,10 +178,14 @@ public class AutoRefill {
                     ItemStack newItem = SelectedSlotHelper.getMainHandItem();
                     placeMainHandMem.update(newItem);
                     placeMainHandMem.slot = currentSlot;
+                    placeMainHandMem.noStockNotified = false;
                 }
             } else if (!currentItem.isEmpty() && !placeMainHandMem.isSameType(currentItem)) {
                 // 物品已手动更换，更新记忆
                 placeMainHandMem = new Memory(currentItem, currentSlot);
+            } else {
+                // 物品状态恢复正常，重置无货提示标志
+                placeMainHandMem.noStockNotified = false;
             }
         }
     }
@@ -180,7 +195,7 @@ public class AutoRefill {
      */
     private void managePlaceOffHandMemory(LocalPlayer player) {
         ItemStack currentItem = SelectedSlotHelper.getOffHandItem();
-        var config = ConfigManager.getConfig();
+        com.example.autoclicker.config.Config config = ConfigManager.getConfig();
 
         if (placeOffHandMem == null) {
             // 没有记忆，写入新记忆
@@ -194,10 +209,14 @@ public class AutoRefill {
                 if (success) {
                     ItemStack newItem = SelectedSlotHelper.getOffHandItem();
                     placeOffHandMem.update(newItem);
+                    placeOffHandMem.noStockNotified = false;
                 }
             } else if (!currentItem.isEmpty() && !placeOffHandMem.isSameType(currentItem)) {
                 // 物品已手动更换，更新记忆
                 placeOffHandMem = new Memory(currentItem, OFFHAND_SLOT);
+            } else {
+                // 物品状态恢复正常，重置无货提示标志
+                placeOffHandMem.noStockNotified = false;
             }
         }
     }
@@ -237,7 +256,14 @@ public class AutoRefill {
 
     private boolean refillSlot(LocalPlayer player, Memory memory, int targetSlot) {
         // 传递副本，防止原对象被修改
-        return replacer.refillSlot(player, memory.item.copy(), targetSlot);
+        boolean success = replacer.refillSlot(player, memory.item.copy(), targetSlot);
+        if (!success && !memory.noStockNotified) {
+            // 无货只提示一次，物品状态恢复或重建记忆后才会再次提示
+            memory.noStockNotified = true;
+            Main.sendMessage("autoclicker.message.no_items_left",
+                    com.example.autoclicker.tool.TextCompat.literal(memory.item.getHoverName().getString()));
+        }
+        return success;
     }
 
     /**

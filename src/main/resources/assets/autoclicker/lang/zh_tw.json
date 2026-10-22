@@ -32,9 +32,6 @@
   "config.place_randomness_enabled": "啟用放置隨機延遲",
   "config.place_randomness_range": "放置隨機延遲範圍（刻）",
 
-  "config.section.anti_detection": "反檢測設定",
-  "config.humanize_clicks": "隨機漏放置（模擬真人）",
-
   "gui.autoclicker.enabled": "已啟用",
   "gui.autoclicker.disabled": "已停用",
 

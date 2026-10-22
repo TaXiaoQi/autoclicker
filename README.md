@@ -4,7 +4,7 @@
 
 A lightweight, event-driven automation tool designed for early- to mid-game technical farms—such as experience farms, semi-automatic Piglin bartering setups, mob grinders, and tree farms. Supports automatic attacking, planting, bone meal acceleration, and intelligent audio control.
 
-Fully compatible with **Minecraft 1.21.1 through 1.21.11**, featuring a refactored codebase for improved stability and maintainability.
+Fully compatible with **Minecraft 1.20 through 26.2**, featuring a refactored codebase for improved stability and maintainability.
 
 ## **Key Controls (Default Keybinds)**
 
@@ -28,11 +28,7 @@ The mod features an intelligent **auto-mute system** with three priority levels:
 2. **Linked (Medium Priority)**: Automatically mutes when Auto Attack or Auto Planting is active (configurable).
 3. **Focus-Based (Lowest Priority)**: Mutes when the Minecraft window loses focus or is minimized, and restores volume when you return.
 
-> **Known Issue**: If the game is forcefully closed via the launcher (e.g., "Close Game" button in MultiMC, Prism, or the official launcher) while muted, the audio may remain stuck at zero after restarting Minecraft.
->
-> **Cause**: The mod stores the original volume in memory and relies on Minecraft’s shutdown event to restore it. When the game process is terminated externally (not via in-game exit), this event is never fired, so the volume isn’t restored. Additionally, the mod’s runtime data is lost, so the next launch starts with volume = 0.
->
-> **Workaround**: Manually adjust the master volume in Minecraft’s sound settings once after relaunching.
+> **Note**: The mod remembers your original volume in a persistent state file. Even if the game is forcefully closed (e.g., "Close Game" button in the launcher) while muted, the master volume is automatically restored on the next launch.
 
 ## **Efficiency & Customization**
 
@@ -40,7 +36,7 @@ The mod features an intelligent **auto-mute system** with three priority levels:
 - **Auto Planting**: Default interval = 5 ticks (0.25 seconds).
 
 Both intervals are fully adjustable via the **F10 configuration menu**, where you can also:
-- Enable **randomized delays** or **skip cycles** to reduce predictability,
+- Enable **randomized delays** to reduce predictability,
 - Toggle support for neutral/passive mobs,
 - Control whether auto-functions trigger linked muting,
 - And more—all without restarting the game.

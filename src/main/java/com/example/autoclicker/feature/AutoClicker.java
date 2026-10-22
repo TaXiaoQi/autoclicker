@@ -1,7 +1,9 @@
 package com.example.autoclicker.feature;
 
 import com.example.autoclicker.Main;
+import com.example.autoclicker.config.Config;
 import com.example.autoclicker.config.ConfigManager;
+import com.example.autoclicker.tool.SwingHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -39,7 +41,7 @@ public class AutoClicker {
         if (client.player == null || client.level == null) return;
 
         if (!memoryInitialized) {
-            var config = ConfigManager.getConfig();
+            Config config = ConfigManager.getConfig();
 
             if (config.autoRefillMainHand || config.autoRefillOffHand) {
                 if (config.autoAttackEnabled) {
@@ -53,7 +55,7 @@ public class AutoClicker {
         }
 
 
-        var levelTime = client.level.getGameTime();
+        long levelTime = client.level.getGameTime();
         if (attackCooldown > 0) attackCooldown--;
         if (placeCooldown > 0) placeCooldown--;
 
@@ -121,7 +123,7 @@ public class AutoClicker {
     }
 
     private void checkAndDisableTimeout(long currentTime) {
-        var config = ConfigManager.getConfig();
+        Config config = ConfigManager.getConfig();
 
         // 计算超时刻数（将秒转换为游戏刻，20刻=1秒）
         long timeoutTicks = config.autoDisableTimeout * 20L;
@@ -133,8 +135,10 @@ public class AutoClicker {
             if (referenceTime != -1 && currentTime - referenceTime >= timeoutTicks) {
                 config.autoAttackEnabled = false;
                 ConfigManager.save();
+                // 超时自动关闭属于功能关闭，需要同步解除联动静音
+                MuteFeature.getInstance().releaseAttackMute();
                 Main.sendMessage("autoclicker.message.auto_disabled_timeout",
-                        Component.translatable("autoclicker.feature.attack"),
+                        com.example.autoclicker.tool.TextCompat.translatable("autoclicker.feature.attack"),
                         config.autoDisableTimeout);
                 // 重置状态
                 attackStartTime = -1;
@@ -151,8 +155,10 @@ public class AutoClicker {
             if (referenceTime != -1 && currentTime - referenceTime >= timeoutTicks) {
                 config.autoPlaceEnabled = false;
                 ConfigManager.save();
+                // 超时自动关闭属于功能关闭，需要同步解除联动静音
+                MuteFeature.getInstance().releasePlaceMute();
                 Main.sendMessage("autoclicker.message.auto_disabled_timeout",
-                        Component.translatable("autoclicker.feature.place"),
+                        com.example.autoclicker.tool.TextCompat.translatable("autoclicker.feature.place"),
                         config.autoDisableTimeout);
                 // 重置状态
                 placeStartTime = -1;
@@ -164,7 +170,7 @@ public class AutoClicker {
     }
 
     public void resetAutomationOnDisconnect() {
-        var config = ConfigManager.getConfig();
+        Config config = ConfigManager.getConfig();
 
         // 重置计时器
         attackTickCounter = 0;
@@ -189,6 +195,10 @@ public class AutoClicker {
         config.autoAttackEnabled = false;
         config.autoPlaceEnabled = false;
 
+        // 同步释放联动静音请求，避免残留标志影响后续静音判定
+        MuteFeature.getInstance().releaseAttackMute();
+        MuteFeature.getInstance().releasePlaceMute();
+
         // 分别清除攻击和放置功能的记忆
         autoRefill.clearAttackMemory();
         autoRefill.clearPlaceMemory();
@@ -203,32 +213,30 @@ public class AutoClicker {
             if (client.gameMode == null || client.player == null) return false;
             if (client.player.getAttackStrengthScale(0.0F) < 1.0F) return false;
 
-            var hitResult = client.hitResult;
-            if (!(hitResult instanceof EntityHitResult entityHit)) return false;
+            HitResult hitResult = client.hitResult;
+            // Java 8 兼容：不用 instanceof 模式匹配
+            if (!(hitResult instanceof EntityHitResult)) return false;
+            EntityHitResult entityHit = (EntityHitResult) hitResult;
 
-            var entity = entityHit.getEntity();
-            var config = ConfigManager.getConfig();
+            net.minecraft.world.entity.Entity entity = entityHit.getEntity();
+            Config config = ConfigManager.getConfig();
 
             // 攻击盔甲架
             if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && config.attackArmorStands) {
-                client.gameMode.attack(client.player, entity);
-                client.player.swing(InteractionHand.MAIN_HAND);
-                return true;
+                return performEntityAttack(client, entity);
             }
 
             // 攻击敌对生物
-            if (entity instanceof net.minecraft.world.entity.Mob mob) {
-                var category = mob.getType().getCategory();
+            // Java 8 兼容：不用 instanceof 模式匹配
+            if (entity instanceof net.minecraft.world.entity.Mob) {
+                net.minecraft.world.entity.Mob mob = (net.minecraft.world.entity.Mob) entity;
+                net.minecraft.world.entity.MobCategory category = mob.getType().getCategory();
                 if (category == net.minecraft.world.entity.MobCategory.MONSTER && config.attackHostileMobs) {
-                    client.gameMode.attack(client.player, entity);
-                    client.player.swing(InteractionHand.MAIN_HAND);
-                    return true;
+                    return performEntityAttack(client, entity);
                 }
                 // 攻击中立生物
                 if (category == net.minecraft.world.entity.MobCategory.CREATURE && config.attackNeutralMobs) {
-                    client.gameMode.attack(client.player, entity);
-                    client.player.swing(InteractionHand.MAIN_HAND);
-                    return true;
+                    return performEntityAttack(client, entity);
                 }
             }
         } catch (Exception e) {
@@ -237,23 +245,38 @@ public class AutoClicker {
         return false;
     }
 
+    /**
+     * 对实体执行一次攻击并挥臂。
+     * 26.x 起突刺类武器（长矛等）必须走版本适配层的 piercingAttack，
+     * 普通 gameMode.attack 对它们只会播放突刺动画（反复伸缩）而无伤害。
+     */
+    private boolean performEntityAttack(Minecraft client, net.minecraft.world.entity.Entity entity) {
+        if (!com.example.autoclicker.tool.AttackCompat.attack(client, entity)) {
+            client.gameMode.attack(client.player, entity);
+        }
+        SwingHelper.swingArm(client.player, InteractionHand.MAIN_HAND);
+        return true;
+    }
+
     // 放置逻辑
     private boolean performAutoPlace(Minecraft client) {
         try {
             if (client.gameMode == null || client.player == null) return false;
 
             HitResult hitResult = client.hitResult;
-            if (!(hitResult instanceof BlockHitResult blockHit)) {
+            // Java 8 兼容：不用 instanceof 模式匹配
+            if (!(hitResult instanceof BlockHitResult)) {
                 return false;
             }
+            BlockHitResult blockHit = (BlockHitResult) hitResult;
 
-            var level = client.level;
-            var pos = blockHit.getBlockPos();
+            net.minecraft.client.multiplayer.ClientLevel level = client.level;
+            net.minecraft.core.BlockPos pos = blockHit.getBlockPos();
             BlockState state = null;
             if (level != null) {
                 state = level.getBlockState(pos);
             }
-            var config = ConfigManager.getConfig();
+            Config config = ConfigManager.getConfig();
 
             // 检查主副手物品
             ItemStack mainHandItem = client.player.getMainHandItem();
@@ -263,15 +286,15 @@ public class AutoClicker {
             if (config.useBoneMeal && state != null && canUseBoneMealOn(state.getBlock())) {
                 // 检查主副手是否有骨粉
                 if (mainHandItem.getItem() == Items.BONE_MEAL) {
-                    InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, blockHit);
+                    InteractionResult result = com.example.autoclicker.tool.ItemUseAdapter.useItemOn(client, InteractionHand.MAIN_HAND, blockHit);
                     if (result.consumesAction()) {
-                        client.player.swing(InteractionHand.MAIN_HAND);
+                        SwingHelper.swingArm(client.player, InteractionHand.MAIN_HAND);
                         return true;
                     }
                 } else if (offHandItem.getItem() == Items.BONE_MEAL) {
-                    InteractionResult result = client.gameMode.useItemOn(client.player, InteractionHand.OFF_HAND, blockHit);
+                    InteractionResult result = com.example.autoclicker.tool.ItemUseAdapter.useItemOn(client, InteractionHand.OFF_HAND, blockHit);
                     if (result.consumesAction()) {
-                        client.player.swing(InteractionHand.OFF_HAND);
+                        SwingHelper.swingArm(client.player, InteractionHand.OFF_HAND);
                         return true;
                     }
                 }
@@ -309,9 +332,9 @@ public class AutoClicker {
                 // 这里不需要额外条件，因为isPlantableSoil已经过滤了大部分方块
 
                 if (hand != null) {
-                    InteractionResult result = client.gameMode.useItemOn(client.player, hand, blockHit);
+                    InteractionResult result = com.example.autoclicker.tool.ItemUseAdapter.useItemOn(client, hand, blockHit);
                     if (result.consumesAction()) {
-                        client.player.swing(hand);
+                        SwingHelper.swingArm(client.player, hand);
                         return true;
                     }
                 }
@@ -334,31 +357,29 @@ public class AutoClicker {
                 block == Blocks.KELP_PLANT ||         // 海带植物
                 block == Blocks.WEEPING_VINES ||      // 垂泪藤
                 block == Blocks.TWISTING_VINES ||     // 缠怨藤
-                block == Blocks.CAVE_VINES ||         // 洞穴藤蔓
-                block == Blocks.CAVE_VINES_PLANT ||   // 洞穴藤蔓植物
-                block == Blocks.SMALL_DRIPLEAF ||     // 小型垂滴叶
-                block == Blocks.BIG_DRIPLEAF ||       // 大型垂滴叶
-                block == Blocks.AZALEA ||             // 杜鹃花丛
-                block == Blocks.FLOWERING_AZALEA ||   // 盛开的杜鹃花丛
-                // 下界菌类（可长成巨型菌）
                 block == Blocks.CRIMSON_FUNGUS ||     // 绯红菌
-                block == Blocks.WARPED_FUNGUS;     // 诡异菌
+                block == Blocks.WARPED_FUNGUS ||      // 诡异菌
+                block == Blocks.BROWN_MUSHROOM ||     // 棕色蘑菇（骨粉催成巨型蘑菇）
+                block == Blocks.RED_MUSHROOM ||       // 红色蘑菇
+                block == Blocks.SUNFLOWER ||          // 向日葵（两格高花，骨粉复制）
+                block == Blocks.LILAC ||              // 丁香
+                block == Blocks.ROSE_BUSH ||          // 玫瑰丛
+                block == Blocks.PEONY ||              // 牡丹
+                // 洞穴藤蔓/垂滴叶/杜鹃为 1.17 新增，由版本适配层判断
+                com.example.autoclicker.tool.Plantables.isExtraBonemealTarget(block);
     }
 
     private boolean isPlantableItem(ItemStack itemStack) {
         if (itemStack.isEmpty()) return false;
-        var item = itemStack.getItem();
+        Item item = itemStack.getItem();
 
         // 种子类物品
         return item == Items.WHEAT_SEEDS ||
                 item == Items.BEETROOT_SEEDS ||
                 item == Items.MELON_SEEDS ||
                 item == Items.PUMPKIN_SEEDS ||
-                item == Items.TORCHFLOWER_SEEDS ||
-                item == Items.PITCHER_POD ||
                 item == Items.COCOA_BEANS ||
                 item == Items.SWEET_BERRIES ||
-                item == Items.GLOW_BERRIES ||
                 // 作物物品
                 item == Items.CARROT ||
                 item == Items.POTATO ||
@@ -370,11 +391,6 @@ public class AutoClicker {
                 item == Items.JUNGLE_SAPLING ||
                 item == Items.ACACIA_SAPLING ||
                 item == Items.DARK_OAK_SAPLING ||
-                item == Items.MANGROVE_PROPAGULE ||
-                item == Items.CHERRY_SAPLING ||
-                // 杜鹃花丛
-                item == Items.AZALEA ||
-                item == Items.FLOWERING_AZALEA ||
                 // 下界菌类
                 item == Items.CRIMSON_FUNGUS ||      // 绯红菌（种在绯红菌岩上）
                 item == Items.WARPED_FUNGUS ||       // 诡异菌（种在诡异菌岩上）
@@ -387,7 +403,9 @@ public class AutoClicker {
                 item == Items.KELP ||
                 item == Items.SEA_PICKLE ||
                 item == Items.TWISTING_VINES ||
-                item == Items.WEEPING_VINES;
+                item == Items.WEEPING_VINES ||
+                // 高版本新增物品（火炬花/瓶子草/发光浆果/杜鹃/红树苗等）由版本适配层判断
+                com.example.autoclicker.tool.Plantables.isExtraPlantable(item);
     }
 
     private boolean isPlantableSoil(Block block) {

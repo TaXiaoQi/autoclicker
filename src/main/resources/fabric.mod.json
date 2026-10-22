@@ -14,7 +14,7 @@
     "sources": "https://github.com/TaXiaoQi/autoclicker",
     "issues": "https://github.com/TaXiaoQi/autoclicker/issues"
   },
-  "license": "MIT",
+  "license": "GPL-3.0",
   "environment": "client",
   "entrypoints": {
     "client": [
