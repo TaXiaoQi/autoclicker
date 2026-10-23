@@ -278,7 +278,9 @@ subprojects {
             expand([
                     "version": fullVersion,
                     "minecraft_version": mcVersion,
-                    "java_version": getJavaVersionForMc(mcVersion)
+                    "java_version": getJavaVersionForMc(mcVersion),
+                    // fabric-api 的 mod id 并非全版本一致：0.77 之前的版本（1.16.5/1.17/1.18/1.18.1/1.19/1.19.1 所用）id 为 "fabric"，其余为 "fabric-api"
+                    "fabric_api_mod_id": (mcVersion in ["1.16.5", "1.17", "1.17.1", "1.18", "1.18.1", "1.19", "1.19.1"]) ? "fabric" : "fabric-api"
             ])
         }
     }
