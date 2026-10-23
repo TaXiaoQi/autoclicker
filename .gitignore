@@ -114,8 +114,8 @@ gradle-app.setting
 # Common working directory
 run/
 
-# 构建产物输出目录
-dist/
+# 构建产物输出目录（releases/fabric、releases/neoforge 等按平台分类）
+releases/
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar

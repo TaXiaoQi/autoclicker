@@ -291,7 +291,7 @@ subprojects {
             archiveBaseName = "Autoclicker"
             archiveVersion = "fabric${mcVersion}-${modVersion}"
         }
-        def outputDir = rootProject.layout.projectDirectory.dir("dist")
+        def outputDir = rootProject.layout.projectDirectory.dir("releases/fabric")
         def outputFileName = "Autoclicker-fabric${mcVersion}-${modVersion}.jar"
         tasks.register('copyBuild', Copy) {
             description = "Copy JAR to root dist directory"
@@ -307,7 +307,7 @@ subprojects {
             archiveBaseName = "Autoclicker"
             archiveVersion = "fabric${mcVersion}-${modVersion}"
         }
-        def outputDir = rootProject.layout.projectDirectory.dir("dist")
+        def outputDir = rootProject.layout.projectDirectory.dir("releases/fabric")
         def outputFileName = "Autoclicker-fabric${mcVersion}-${modVersion}.jar"
         tasks.register('copyBuild', Copy) {
             description = "Copy remapped JAR to root dist directory"
