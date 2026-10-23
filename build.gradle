@@ -287,10 +287,10 @@ subprojects {
     if (isModern) {
         tasks.named('jar') {
             archiveBaseName = "Autoclicker"
-            archiveVersion = "${modVersion}+${mcVersion}"
+            archiveVersion = "${modVersion}+${mcVersion}-fabric"
         }
         def outputDir = rootProject.layout.projectDirectory.dir("dist")
-        def outputFileName = "Autoclicker-${modVersion}+${mcVersion}.jar"
+        def outputFileName = "Autoclicker-${modVersion}+${mcVersion}-fabric.jar"
         tasks.register('copyBuild', Copy) {
             description = "Copy JAR to root dist directory"
             group = "build"
@@ -303,10 +303,10 @@ subprojects {
         // 对于旧版本，可以继续使用 remapJar
         tasks.named('remapJar') {
             archiveBaseName = "Autoclicker"
-            archiveVersion = "${modVersion}+${mcVersion}"
+            archiveVersion = "${modVersion}+${mcVersion}-fabric"
         }
         def outputDir = rootProject.layout.projectDirectory.dir("dist")
-        def outputFileName = "Autoclicker-${modVersion}+${mcVersion}.jar"
+        def outputFileName = "Autoclicker-${modVersion}+${mcVersion}-fabric.jar"
         tasks.register('copyBuild', Copy) {
             description = "Copy remapped JAR to root dist directory"
             group = "build"
