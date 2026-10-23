@@ -39,7 +39,27 @@ public class ConfigManager {
         if (config == null) {
             config = new Config();
         }
+        migrateLegacyKeyCodes(config);
         validateAndFix(config);
+    }
+
+    /**
+     * 迁移旧版误用的 Windows 虚拟键码：VK_F7~VK_F10（118~121）不是有效 GLFW 键码，
+     * 会导致按键显示为原始数字名且功能失效，统一映射为对应的 GLFW 键码（F7~F10 = 296~299）。
+     */
+    private static void migrateLegacyKeyCodes(Config config) {
+        config.keyMute = migrateKeyCode(config.keyMute);
+        config.keyToggleAttack = migrateKeyCode(config.keyToggleAttack);
+        config.keyTogglePlace = migrateKeyCode(config.keyTogglePlace);
+        config.keyOpenGUI = migrateKeyCode(config.keyOpenGUI);
+    }
+
+    private static int migrateKeyCode(int keyCode) {
+        // 仅迁移旧版默认的四个 VK 码，用户自定义的其他键值不受影响
+        if (keyCode >= 118 && keyCode <= 121) {
+            return keyCode + 178;
+        }
+        return keyCode;
     }
 
     /**

@@ -2,12 +2,13 @@ package com.example.autoclicker.config;
 
 public class Config {
     // === 快捷键配置 ===
-    // 注意：MC 26.3 起编译类路径不再包含 org.lwjgl.glfw，故使用 GLFW 键码字面量
-    // （GLFW_KEY_F7=118, F8=119, F9=120, F10=121）
-    public int keyMute = 118;        // F7
-    public int keyToggleAttack = 119; // F8
-    public int keyTogglePlace = 120;  // F9
-    public int keyOpenGUI = 121;      // F10
+    // 注意：使用 GLFW 键码（GLFW_KEY_F1=290，F7~F10 依次为 296~299）。
+    // 早期版本误用了 Windows 虚拟键码（VK_F7=118~VK_F10=121），它们不是有效 GLFW 键码，
+    // 会导致按键绑定显示为原始数字名且按键功能失效，加载旧配置时会自动迁移。
+    public int keyMute = 296;         // F7
+    public int keyToggleAttack = 297; // F8
+    public int keyTogglePlace = 298;  // F9
+    public int keyOpenGUI = 299;      // F10
 
     // === 自动攻击配置 ===
     public boolean autoAttackEnabled = false;
